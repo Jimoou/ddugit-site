@@ -1,0 +1,5 @@
+# Supabase CLI settings for this repository (migrations and Edge Functions).
+project_id = "ddugit"
+
+[functions.license-refresh]
+verify_jwt = false

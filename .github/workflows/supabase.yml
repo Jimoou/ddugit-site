@@ -1,0 +1,37 @@
+name: Supabase
+
+# Apply database migrations and deploy the Edge Functions when supabase/ changes on main.
+# Needs (Settings → Secrets and variables → Actions): secrets SUPABASE_ACCESS_TOKEN
+# (supabase.com → Account → Access Tokens), SUPABASE_DB_PASSWORD, and SUPABASE_PROJECT_REF
+# (variable or secret). The license signing key lives in Supabase itself (Edge Functions → Secrets).
+on:
+  push:
+    branches: [main]
+    paths: ["supabase/**", ".github/workflows/supabase.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - if: env.SUPABASE_ACCESS_TOKEN == '' || env.PROJECT_REF == ''
+        run: echo "::notice::Supabase deploy skipped (set SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD and SUPABASE_PROJECT_REF)"
+      - uses: actions/checkout@v4
+      - if: env.SUPABASE_ACCESS_TOKEN != '' && env.PROJECT_REF != ''
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - if: env.SUPABASE_ACCESS_TOKEN != '' && env.PROJECT_REF != ''
+        run: supabase link --project-ref "$PROJECT_REF"
+      - if: env.SUPABASE_ACCESS_TOKEN != '' && env.PROJECT_REF != ''
+        run: supabase db push
+      # The app calls it without a login (the signed license is the proof), so no JWT check.
+      - if: env.SUPABASE_ACCESS_TOKEN != '' && env.PROJECT_REF != ''
+        run: supabase functions deploy license-refresh --no-verify-jwt --project-ref "$PROJECT_REF"
