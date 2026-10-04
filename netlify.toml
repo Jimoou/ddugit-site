@@ -1,3 +1,8 @@
+# Next.js on Netlify needs Netlify's Next.js runtime: `.next` holds no index.html,
+# so publishing it without the runtime serves 404 everywhere.
 [build]
   command = "npm run build"
   publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
