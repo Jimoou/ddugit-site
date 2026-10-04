@@ -8,7 +8,7 @@ export default function Privacy() {
     <div className="page prose">
       <p className="eyebrow">Legal</p>
       <h1>Privacy</h1>
-      <p className="note">Draft. This policy will be finalised before sales open.</p>
+      <p className="note">Draft. This policy will be finalized before sales open.</p>
       <h2>The app</h2>
       <p>
         ddugit never sends your repositories, commits or files anywhere. It contacts ddugit.com only to check for app

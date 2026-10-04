@@ -8,7 +8,7 @@ export default function Terms() {
     <div className="page prose">
       <p className="eyebrow">Legal</p>
       <h1>Terms of use</h1>
-      <p className="note">Draft. These terms will be finalised before sales open.</p>
+      <p className="note">Draft. These terms will be finalized before sales open.</p>
       <h2>1. Who may use ddugit for free</h2>
       <p>
         Personal projects, students and open-source projects may use ddugit for free. Using it for work at a company or

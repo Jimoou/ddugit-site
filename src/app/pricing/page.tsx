@@ -8,7 +8,7 @@ export default function Pricing() {
     <div className="page">
       <p className="eyebrow">Pricing</p>
       <h1>Same app for everyone</h1>
-      <p className="muted">Every feature is in every plan. What changes is what you use it for.</p>
+      <p className="muted">Every plan has every feature. The only difference is what you use it for.</p>
       <section className="grid tight">
         <article className="card">
           <p className="eyebrow">Free</p>
@@ -29,12 +29,12 @@ export default function Pricing() {
             {won(PRICES.yearly)}
             <span className="per"> / year</span>
           </div>
-          <p>One user, billed yearly. Two months free.</p>
+          <p>One user, billed yearly. Two months free compared with monthly.</p>
         </article>
         <article className="card">
           <p className="eyebrow">Air-gapped · site</p>
           <div className="price">Contact us</div>
-          <p>An offline license for a whole organisation without internet access.</p>
+          <p>An offline license for an entire organization without internet access.</p>
         </article>
       </section>
       <div className="actions start">
@@ -46,8 +46,8 @@ export default function Pricing() {
         </a>
       </div>
       <p className="muted small">
-        Work at a company, client projects and paid products count as commercial use. Prices in Korean won, VAT
-        included. When a subscription ends, nothing is locked; the app reminds you to renew.
+        Using ddugit for work at a company, for client projects or to build paid products counts as commercial use.
+        Prices in Korean won, VAT included. When a subscription ends, nothing is locked; the app reminds you to renew.
       </p>
     </div>
   );

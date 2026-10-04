@@ -3,7 +3,7 @@
 
 export const SITE = {
   name: "ddugit",
-  tagline: "See your Git as a graph. Work it as a graph.",
+  tagline: "See your Git history as a graph, and work right on it.",
   url: "https://ddugit.com",
   contact: "support@ddugit.com",
 };
