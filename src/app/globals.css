@@ -221,3 +221,55 @@ ol.steps li {
   resize: vertical;
   word-break: break-all;
 }
+
+/* Sign-in buttons, drawn to the providers' branding rules (components/OAuthButton.tsx). */
+.oauth-list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 20px 0;
+}
+.oauth {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  min-width: 240px;
+  padding: 0 12px;
+  border-radius: 20px;
+  font:
+    500 14px/20px Roboto,
+    Arial,
+    sans-serif;
+  letter-spacing: 0.25px;
+  cursor: pointer;
+}
+.oauth-logo {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+}
+.oauth-label {
+  flex: 1;
+  text-align: center;
+}
+/* Google, dark theme: #131314 fill, #8E918F stroke, #E3E3E3 text. */
+.oauth-google {
+  background: #131314;
+  border: 1px solid #8e918f;
+  color: #e3e3e3;
+}
+/* GitHub: the mark in white on GitHub's dark surface. */
+.oauth-github {
+  background: #24292f;
+  border: 1px solid #24292f;
+  color: #ffffff;
+}
+.oauth:hover {
+  filter: brightness(1.15);
+}
+.oauth:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
