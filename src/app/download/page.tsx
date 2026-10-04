@@ -10,7 +10,7 @@ export default function Download() {
       <p className="eyebrow">Download</p>
       <h1>Get ddugit</h1>
       <p>
-        No sign-up needed. Work use at a company needs a <Link href="/pricing">commercial license</Link>.
+        No sign-up needed. Every install starts with a 14-day <Link href="/pricing">Pro</Link> trial.
       </p>
       <DownloadButtons />
 

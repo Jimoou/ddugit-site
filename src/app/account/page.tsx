@@ -17,7 +17,7 @@ export default async function Account({ searchParams }: { searchParams: Promise<
       <div className="page prose">
         <p className="eyebrow">Account</p>
         <h1>Sign in</h1>
-        <p>Buy and manage commercial licenses here. Downloading and using the app needs no account.</p>
+        <p>Buy and manage ddugit Pro here. Downloading and using the app needs no account.</p>
         {error && <p className="note">Sign-in didn&apos;t go through. Please try again.</p>}
         {hasSupabase() ? (
           <div className="oauth-list">

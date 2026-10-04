@@ -381,3 +381,39 @@ ol.steps li {
   outline: 2px solid var(--cyan);
   outline-offset: 2px;
 }
+
+/* Free / Pro comparison */
+.table-wrap {
+  overflow-x: auto;
+  margin: 8px 0 28px;
+  border: 1px solid var(--line);
+  background: var(--brackets), var(--scanlines), var(--surface);
+}
+.compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.compare th,
+.compare td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.compare thead th {
+  color: var(--muted);
+  font: 650 12px/1.4 var(--sans);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.compare tbody th {
+  font-weight: 500;
+  color: var(--text);
+}
+.compare td {
+  color: var(--text-2);
+}
+.compare tr:last-child > * {
+  border-bottom: none;
+}

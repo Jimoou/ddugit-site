@@ -16,11 +16,11 @@ const FEATURES = [
     body: "Interactive rebase without an editor: reorder, squash, fixup and drop in a sheet. Histories with merges work too.",
   },
   {
-    name: "Backport tracker",
+    name: "Backport tracker (Pro)",
     body: "See which fixes one branch has and another lacks, cherry-pick them in order, or export patches for places you can't push to.",
   },
   {
-    name: "All your repositories",
+    name: "All your repositories (Pro)",
     body: "One dashboard for every repository: current branch, ahead/behind, local changes and paused work, without opening each one.",
   },
   {
@@ -36,7 +36,8 @@ export default function Home() {
         <p className="eyebrow">Git client · macOS · Windows</p>
         <h1>{SITE.tagline}</h1>
         <p className="lead">
-          ddugit puts the commit graph at the center of your Git work. Free for personal, student and open-source use.
+          ddugit puts the commit graph at the center of your Git work. Free for everyday Git, with a 14-day Pro trial
+          built in.
         </p>
         <div className="actions">
           <Link href="/download" className="button primary">
@@ -87,9 +88,7 @@ export default function Home() {
         <Screen name="backport" alt="The backport sheet listing commits missing from a branch" />
       </section>
 
-      <p className="muted small center">
-        No sign-up to download or use. An account is only for buying a commercial license.
-      </p>
+      <p className="muted small center">No sign-up to download or use. An account is only for buying Pro.</p>
     </>
   );
 }
