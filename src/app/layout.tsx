@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Wordmark } from "@/components/Wordmark";
 import { SITE } from "@/site";
 import "./globals.css";
 
@@ -15,8 +16,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko">
       <body>
         <header className="top">
-          <Link href="/" className="wordmark">
-            {SITE.name}
+          <Link href="/" className="brand" aria-label={SITE.name}>
+            <Wordmark />
           </Link>
           <nav>
             <Link href="/download">다운로드</Link>
