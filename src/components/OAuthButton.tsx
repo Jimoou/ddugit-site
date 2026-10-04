@@ -1,7 +1,7 @@
 // Sign-in buttons drawn to each provider's branding rules:
 // - Google (developers.google.com/identity/branding-guidelines): the four-colour "G"
 //   unaltered, dark theme #131314 fill / #8E918F stroke / #E3E3E3 text, Roboto Medium
-//   14px, 40px tall, 12px around the logo, wording "Google 계정으로 로그인".
+//   14px, 40px tall, 12px around the logo, wording "Sign in with Google".
 // - GitHub (github.com/logos): the Invertocat mark unaltered, in one colour.
 
 import type { Provider } from "@/app/account/actions";
@@ -37,8 +37,8 @@ const GitHubMark = () => (
 );
 
 const LOOK = {
-  google: { Logo: GoogleG, label: "Google 계정으로 로그인" },
-  github: { Logo: GitHubMark, label: "GitHub 계정으로 로그인" },
+  google: { Logo: GoogleG, label: "Sign in with Google" },
+  github: { Logo: GitHubMark, label: "Sign in with GitHub" },
 } as const;
 
 export function OAuthButton({ provider }: { provider: Provider }) {

@@ -1,30 +1,31 @@
 import Link from "next/link";
+import { Screen } from "@/components/Screen";
 import { SITE } from "@/site";
 
 const FEATURES = [
   {
-    title: "그래프가 화면의 중심",
-    body: "커밋 그래프를 캔버스에 그리고 확대·회전·미니맵으로 큰 저장소도 한눈에 봅니다.",
+    name: "Graph first",
+    body: "History is a map you can pan, zoom and turn. Branches keep their lane and colour, so a big repository still reads at a glance.",
   },
   {
-    title: "끌어서 병합·rebase",
-    body: "브랜치를 다른 브랜치 위로 끌어 놓으면 병합, rebase, cherry-pick을 고를 수 있습니다.",
+    name: "Drag to merge",
+    body: "Drop a branch on another to merge, rebase or cherry-pick. Shift-drag a commit to reorder it.",
   },
   {
-    title: "목록으로 하는 interactive rebase",
-    body: "편집기 없이 순서 바꾸기·합치기·건너뛰기를 고릅니다. 병합이 섞인 이력도 지원합니다.",
+    name: "Tidy commits from a list",
+    body: "Interactive rebase without an editor: reorder, squash, fixup and drop in a sheet. Histories with merges work too.",
   },
   {
-    title: "백포트 추적",
-    body: "두 브랜치 사이에 아직 반영되지 않은 커밋을 찾아 한 번에 cherry-pick합니다.",
+    name: "Backport tracker",
+    body: "See which fixes one branch has and another lacks, cherry-pick them in order, or export patches for places you can't push to.",
   },
   {
-    title: "내 저장소",
-    body: "여러 저장소의 브랜치, 앞섬·뒤처짐, 변경 사항을 대시보드 하나에서 훑어봅니다.",
+    name: "All your repositories",
+    body: "A dashboard of every repository: branch, ahead and behind, local changes and paused work, without opening each one.",
   },
   {
-    title: "worktree · 서브모듈 · LFS",
-    body: "큰 프로젝트에 필요한 도구가 사이드바에 함께 들어 있습니다.",
+    name: "Worktrees, submodules, LFS",
+    body: "The tools big projects need sit in the sidebar, next to your branches and pull requests.",
   },
 ];
 
@@ -32,29 +33,62 @@ export default function Home() {
   return (
     <>
       <section className="hero">
+        <p className="eyebrow">Git client · macOS · Windows</p>
         <h1>{SITE.tagline}</h1>
-        <p>
-          ddugit은 커밋 그래프를 중심에 둔 macOS·Windows Git 클라이언트입니다. 개인·학생·오픈소스 용도로는 무료입니다.
+        <p className="lead">
+          ddugit puts the commit graph at the centre of your Git work. Free for personal, student and open-source use.
         </p>
         <div className="actions">
           <Link href="/download" className="button primary">
-            다운로드
+            Download
           </Link>
           <Link href="/pricing" className="button">
-            가격 보기
+            Pricing
           </Link>
         </div>
       </section>
+
+      <Screen
+        name="graph"
+        alt="ddugit showing a repository's commit graph, branches in the sidebar and a commit's details"
+        priority
+      />
+
       <section className="grid">
         {FEATURES.map((f) => (
-          <article key={f.title} className="card">
-            <h3>{f.title}</h3>
+          <article key={f.name} className="card">
+            <p className="eyebrow">{f.name}</p>
             <p>{f.body}</p>
           </article>
         ))}
       </section>
-      <p className="muted small" style={{ textAlign: "center" }}>
-        로그인 없이 내려받고 바로 씁니다. 계정은 상업용 라이선스를 살 때만 필요합니다.
+
+      <section className="showcase">
+        <div>
+          <p className="eyebrow">Interactive rebase</p>
+          <h2>Tidy history without a text editor</h2>
+          <p className="muted">
+            Drag rows to reorder, pick fixup or squash, and apply. Conflicts open in their own sheet and you can cancel
+            any time.
+          </p>
+        </div>
+        <Screen name="rebase" alt="The tidy commits sheet with three commits being reordered and folded" />
+      </section>
+
+      <section className="showcase">
+        <div>
+          <p className="eyebrow">Backports</p>
+          <h2>Know what each branch is missing</h2>
+          <p className="muted">
+            Compare an upstream with a customer branch, cherry-pick the fixes it lacks, and mark the ones it never
+            needs.
+          </p>
+        </div>
+        <Screen name="backport" alt="The backport sheet listing commits missing from a branch" />
+      </section>
+
+      <p className="muted small center">
+        No sign-up to download or use. An account is only for buying a commercial license.
       </p>
     </>
   );

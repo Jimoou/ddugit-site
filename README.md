@@ -1,6 +1,6 @@
 # ddugit-site
 
-[ddugit.com](https://ddugit.com): 소개, 다운로드, 가격, 변경 내역, 계정(라이선스 관리).
+[ddugit.com](https://ddugit.com): 소개, 다운로드, 가격, 계정(라이선스 관리). 사이트 문구는 영어로 고정(2026-10-04). 변경 내역은 나중에 "문서" 메뉴와 함께.
 
 ```bash
 npm install
