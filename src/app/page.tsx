@@ -5,7 +5,7 @@ import { SITE } from "@/site";
 const FEATURES = [
   {
     name: "Graph first",
-    body: "History is a map you can pan, zoom and turn. Branches keep their lane and colour, so a big repository still reads at a glance.",
+    body: "History is a map you can pan, zoom and rotate. Each branch keeps its lane and color, so even a large repository reads at a glance.",
   },
   {
     name: "Drag to merge",
@@ -21,11 +21,11 @@ const FEATURES = [
   },
   {
     name: "All your repositories",
-    body: "A dashboard of every repository: branch, ahead and behind, local changes and paused work, without opening each one.",
+    body: "One dashboard for every repository: current branch, ahead/behind, local changes and paused work, without opening each one.",
   },
   {
     name: "Worktrees, submodules, LFS",
-    body: "The tools big projects need sit in the sidebar, next to your branches and pull requests.",
+    body: "The tools large projects need live in the sidebar, next to your branches and pull requests.",
   },
 ];
 
@@ -36,7 +36,7 @@ export default function Home() {
         <p className="eyebrow">Git client · macOS · Windows</p>
         <h1>{SITE.tagline}</h1>
         <p className="lead">
-          ddugit puts the commit graph at the centre of your Git work. Free for personal, student and open-source use.
+          ddugit puts the commit graph at the center of your Git work. Free for personal, student and open-source use.
         </p>
         <div className="actions">
           <Link href="/download" className="button primary">

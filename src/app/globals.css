@@ -75,6 +75,12 @@ h3 {
   line-height: 1.2;
   letter-spacing: -0.02em;
   margin: 0 0 12px;
+  /* Even lines in headings, no lone last word. */
+  text-wrap: balance;
+}
+p,
+li {
+  text-wrap: pretty;
 }
 code,
 kbd {
