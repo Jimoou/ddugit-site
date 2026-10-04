@@ -11,6 +11,8 @@
   --magenta: #ff3dce;
   --violet: #9b7bff;
   --amber: #ffb347;
+  --brand-ink: #f3f1ff;
+  --brand-star: #ffc56b;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   color-scheme: dark;
 }
@@ -61,15 +63,14 @@ main {
 .top nav a:hover {
   color: var(--text);
 }
-.wordmark {
-  font-weight: 800;
-  font-size: 22px;
-  letter-spacing: -0.5px;
-  text-decoration: none;
-  background: linear-gradient(90deg, var(--cyan), var(--violet), var(--magenta));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.brand {
+  display: block;
+  line-height: 0;
+}
+/* The wordmark as drawn (brand kit): at least 20px tall. */
+.brand .wordmark {
+  height: 24px;
+  width: auto;
 }
 .bottom {
   display: flex;
