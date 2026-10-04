@@ -6,7 +6,8 @@
   --surface: #000;
   --brand-ink: #f3f1ff;
   --brand-star: #ffc56b;
-  --signal: 34, 232, 255;
+  /* Chrome accent (borders, brackets, hover): the brand Orbit lavender #b4abf2, as in the app. */
+  --signal: 180, 171, 242;
   --bracket: rgba(var(--signal), 0.7);
   --brackets:
     linear-gradient(var(--bracket), var(--bracket)) top left / 10px 1px no-repeat,
@@ -273,7 +274,7 @@ kbd {
   font-size: 14px;
 }
 .card .eyebrow {
-  color: var(--cyan);
+  color: rgb(var(--signal));
 }
 .card.focus {
   border-color: rgba(var(--signal), 0.38);
@@ -378,7 +379,7 @@ ol.steps li {
   filter: brightness(1.15);
 }
 .oauth:focus-visible {
-  outline: 2px solid var(--cyan);
+  outline: 2px solid rgb(var(--signal));
   outline-offset: 2px;
 }
 
