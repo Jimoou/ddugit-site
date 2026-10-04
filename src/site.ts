@@ -9,7 +9,7 @@ export const SITE = {
 };
 
 /** Subscription for work use (2026-10-04 decision). Personal, student and open-source use is free. */
-export const PRICES = { monthly: 4900, yearly: 49000 };
+export const PRICES = { monthly: 5, yearly: 50 };
 
 /**
  * `downloads.json` in the public `releases` bucket (Supabase Storage):
@@ -17,8 +17,8 @@ export const PRICES = { monthly: 4900, yearly: 49000 };
  */
 export const DOWNLOADS_URL = process.env.NEXT_PUBLIC_DOWNLOADS_URL ?? "";
 
-/** Prices are in Korean won (the store charges in KRW). */
-export const won = (n: number) => `₩${n.toLocaleString("en-US")}`;
+/** Prices are in US dollars (the store, Lemon Squeezy, charges in USD). */
+export const usd = (n: number) => `$${n.toLocaleString("en-US")}`;
 
 /** Login buttons on the account page, in order (each must be enabled in Supabase → Authentication → Providers). */
 export const LOGIN_PROVIDERS = ["github", "google"] as const satisfies readonly ("github" | "google")[];

@@ -7,7 +7,7 @@
 // provided by Supabase.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { privateKey, publicKey, readLicense, renewed, signLicense } from "../_shared/license.ts";
+import { currentText, privateKey, publicKey, readLicense } from "../_shared/license.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -23,17 +23,15 @@ Deno.serve(async (req) => {
   const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const { data: row } = await db.from("licenses").select("*").eq("id", held.id).maybeSingle();
   if (!row) return json({ status: "unknown" });
-  // A site license has no subscription: it stays what it is.
-  if (!row.paid_through) return json({ license: row.text });
 
   const today = new Date().toISOString().slice(0, 10);
-  if (row.paid_through < today) return json({ status: "expired" });
-
-  const current = (await readLicense(await publicKey(Deno.env.get("DDUGIT_LICENSE_PUBKEY")!), row.text)) ?? held;
-  const text = await signLicense(
-    await privateKey(Deno.env.get("DDUGIT_LICENSE_PRIVATE_KEY")!),
-    renewed({ ...current, seats: row.seats, name: row.name, email: row.email }, row.paid_through, today),
-  );
-  await db.from("licenses").update({ text, updated_at: new Date().toISOString() }).eq("id", row.id);
+  const keys = {
+    sign: await privateKey(Deno.env.get("DDUGIT_LICENSE_PRIVATE_KEY")!),
+    verify: await publicKey(Deno.env.get("DDUGIT_LICENSE_PUBKEY")!),
+  };
+  const text = await currentText(row, today, keys, held);
+  if (!text) return json({ status: "expired" });
+  if (text !== row.text)
+    await db.from("licenses").update({ text, updated_at: new Date().toISOString() }).eq("id", row.id);
   return json({ license: text });
 });

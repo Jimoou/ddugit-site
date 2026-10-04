@@ -9,7 +9,7 @@
     "lint": "eslint",
     "format": "prettier --write .",
     "check": "tsc --noEmit && eslint && prettier --check . && npm test",
-    "test": "node --experimental-strip-types --test supabase/functions/_shared/*.test.ts"
+    "test": "node --experimental-strip-types --test supabase/functions/_shared/*.test.ts src/lib/*.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { type LicenseInfo, addDays, readLicense, renewed, signLicense } from "./license.ts";
+import { type LicenseInfo, addDays, currentText, readLicense, renewed, signLicense } from "./license.ts";
 
 const info: LicenseInfo = {
   id: "lic_1",
@@ -55,4 +55,18 @@ test("keys in the formats scripts/license.mjs writes (PKCS#8 PEM, base64url publ
   const { privateKey, publicKey } = await import("./license.ts");
   const text = await signLicense(await privateKey(pem), info);
   assert.deepEqual(await readLicense(await publicKey(pub), text), info);
+});
+
+test("a row's license today: site as it is, paid subscriptions renewed, lapsed ones none", async () => {
+  const { privateKey, publicKey } = await keys();
+  const keysFor = { sign: privateKey, verify: publicKey };
+  const text = await signLicense(privateKey, info);
+  const row = { id: info.id, name: "Acme Corp", email: info.email, seats: 3, paid_through: "2026-12-04", text };
+
+  const fresh = await readLicense(publicKey, (await currentText(row, "2026-11-04", keysFor))!);
+  assert.equal(fresh?.expires, "2026-12-11");
+  assert.equal(fresh?.seats, 3);
+  assert.equal(fresh?.name, "Acme Corp");
+  assert.equal(await currentText(row, "2026-12-05", keysFor), null);
+  assert.equal(await currentText({ ...row, paid_through: null }, "2030-01-01", keysFor), text);
 });
