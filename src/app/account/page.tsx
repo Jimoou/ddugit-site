@@ -3,11 +3,10 @@ import Link from "next/link";
 import { hasSupabase } from "@/lib/supabase/config";
 import { supabaseServer } from "@/lib/supabase/server";
 import { LOGIN_PROVIDERS } from "@/site";
-import { type Provider, signIn, signOut } from "./actions";
+import { OAuthButton } from "@/components/OAuthButton";
+import { signIn, signOut } from "./actions";
 
 export const metadata: Metadata = { title: "내 계정" };
-
-const LABEL: Record<Provider, string> = { github: "GitHub로 로그인", google: "Google로 로그인" };
 
 export default async function Account({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
@@ -20,10 +19,17 @@ export default async function Account({ searchParams }: { searchParams: Promise<
         <p>라이선스를 사고 관리하는 곳입니다. 앱을 내려받고 쓰는 데는 로그인이 필요 없습니다.</p>
         {error && <p className="note">로그인하지 못했어요. 다시 시도해 주세요.</p>}
         {hasSupabase() ? (
-          <div className="actions" style={{ justifyContent: "flex-start" }}>
+          <div className="oauth-list">
+            {/* Google's button guidelines ask for Roboto Medium; only this page needs it. */}
+            {/* eslint-disable-next-line @next/next/no-page-custom-font -- App Router hoists this link (precedence) */}
+            <link
+              rel="stylesheet"
+              href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap"
+              precedence="default"
+            />
             {LOGIN_PROVIDERS.map((p) => (
               <form key={p} action={signIn.bind(null, p)}>
-                <button className="button">{LABEL[p]}</button>
+                <OAuthButton provider={p} />
               </form>
             ))}
           </div>
