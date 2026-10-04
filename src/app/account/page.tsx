@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { hasSupabase } from "@/lib/supabase/config";
 import { supabaseServer } from "@/lib/supabase/server";
-import { LOGIN_PROVIDERS } from "@/site";
-import { OAuthButton } from "@/components/OAuthButton";
-import { signIn, signOut } from "./actions";
+import { SignInButtons } from "@/components/SignIn";
+import { signOut } from "./actions";
 
 export const metadata: Metadata = { title: "Account" };
 
@@ -19,24 +18,7 @@ export default async function Account({ searchParams }: { searchParams: Promise<
         <h1>Sign in</h1>
         <p>Buy and manage ddugit Pro here. Downloading and using the app needs no account.</p>
         {error && <p className="note">Sign-in didn&apos;t go through. Please try again.</p>}
-        {hasSupabase() ? (
-          <div className="oauth-list">
-            {/* Google's button guidelines ask for Roboto Medium; only this page needs it. */}
-            {/* eslint-disable-next-line @next/next/no-page-custom-font -- App Router hoists this link (precedence) */}
-            <link
-              rel="stylesheet"
-              href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap"
-              precedence="default"
-            />
-            {LOGIN_PROVIDERS.map((p) => (
-              <form key={p} action={signIn.bind(null, p)}>
-                <OAuthButton provider={p} />
-              </form>
-            ))}
-          </div>
-        ) : (
-          <p className="muted small">Sign-in opens soon.</p>
-        )}
+        {hasSupabase() ? <SignInButtons /> : <p className="muted small">Sign-in opens soon.</p>}
       </div>
     );
   }
@@ -69,7 +51,8 @@ export default async function Account({ searchParams }: { searchParams: Promise<
               {STATUS[l.status as string] ?? l.status}
             </p>
             <p className="muted small">
-              Paste this into Settings → License in the app. While the subscription runs, the app renews it by itself.
+              In the app, choose Settings → License → “Activate with your ddugit.com account”. Offline? Paste this text
+              there instead. While the subscription runs, the app renews it by itself.
             </p>
             <textarea className="license-text" readOnly rows={3} value={l.text as string} />
           </section>

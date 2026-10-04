@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PRICES, SITE, won } from "@/site";
+import { PRICES, SITE, usd } from "@/site";
 
 export const metadata: Metadata = { title: "Pricing" };
 
@@ -34,13 +34,13 @@ export default function Pricing() {
       <section className="grid tight">
         <article className="card">
           <p className="eyebrow">Free</p>
-          <div className="price">{won(0)}</div>
+          <div className="price">{usd(0)}</div>
           <p>Everything you need to work with Git, for anyone.</p>
         </article>
         <article className="card focus">
           <p className="eyebrow">Pro · monthly</p>
           <div className="price">
-            {won(PRICES.monthly)}
+            {usd(PRICES.monthly)}
             <span className="per"> / month</span>
           </div>
           <p>One user. Cancel any time.</p>
@@ -48,7 +48,7 @@ export default function Pricing() {
         <article className="card focus">
           <p className="eyebrow">Pro · yearly</p>
           <div className="price">
-            {won(PRICES.yearly)}
+            {usd(PRICES.yearly)}
             <span className="per"> / year</span>
           </div>
           <p>One user. Two months free compared with monthly.</p>
@@ -93,8 +93,8 @@ export default function Pricing() {
         </a>
       </div>
       <p className="muted small">
-        Prices in Korean won, VAT included. When a subscription ends, nothing you made changes; Pro features lock until
-        you renew.
+        Prices in US dollars. Sales tax or VAT is added at checkout where it applies. When a subscription ends, nothing
+        you made changes; Pro features lock until you renew.
       </p>
     </div>
   );

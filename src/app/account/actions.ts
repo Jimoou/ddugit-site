@@ -1,13 +1,17 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { NEXT_COOKIE, safeNext } from "@/lib/activate";
 import { supabaseServer } from "@/lib/supabase/server";
 import { SITE } from "@/site";
 
 export type Provider = "github" | "google";
 
-export async function signIn(provider: Provider) {
+/** Sign in with `provider`, then come back to `next` (a path on this site; the account page by default). */
+export async function signIn(provider: Provider, next?: string) {
+  // Kept in a cookie rather than the callback URL, which the provider settings must match exactly.
+  (await cookies()).set(NEXT_COOKIE, safeNext(next), { httpOnly: true, sameSite: "lax", secure: true, maxAge: 600 });
   const origin = (await headers()).get("origin") ?? SITE.url;
   const { data, error } = await (
     await supabaseServer()

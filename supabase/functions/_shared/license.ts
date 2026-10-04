@@ -80,3 +80,32 @@ export function renewed(info: LicenseInfo, paidThrough: string, today: string): 
   const expires = addDays(paidThrough, GRACE_DAYS);
   return { ...info, issued: today, expires, updatesUntil: expires };
 }
+
+/** A `licenses` row, as the functions read it. */
+export interface LicenseRow {
+  id: string;
+  name: string;
+  email: string;
+  seats: number;
+  paid_through: string | null;
+  text: string;
+}
+
+/**
+ * The license text a row grants today: a site license as it is; a subscription
+ * paid through today or later, renewed through its period; null once it has lapsed.
+ * `fallback` stands in when the stored text can't be read (it shouldn't happen).
+ */
+export async function currentText(
+  row: LicenseRow,
+  today: string,
+  keys: { sign: CryptoKey; verify: CryptoKey },
+  fallback?: LicenseInfo,
+): Promise<string | null> {
+  if (!row.paid_through) return row.text;
+  if (row.paid_through < today) return null;
+  const current = (await readLicense(keys.verify, row.text)) ?? fallback;
+  if (!current) return null;
+  const info = { ...current, seats: row.seats, name: row.name, email: row.email };
+  return signLicense(keys.sign, renewed(info, row.paid_through, today));
+}
