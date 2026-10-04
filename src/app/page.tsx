@@ -24,6 +24,14 @@ const FEATURES = [
     body: "One dashboard for every repository: current branch, ahead/behind, local changes and paused work, without opening each one.",
   },
   {
+    name: "Stacked branches (Pro)",
+    body: "Build small branches on top of each other, one pull request each. When the bottom changes, restack the whole stack in one go.",
+  },
+  {
+    name: "Air-gapped transfer (Pro)",
+    body: "Carry code into closed networks as bundle files holding only what each site is missing, with checksums, and track what went where.",
+  },
+  {
     name: "Worktrees, submodules, LFS",
     body: "The tools large projects need live in the sidebar, next to your branches and pull requests.",
   },

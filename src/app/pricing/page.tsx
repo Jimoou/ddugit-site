@@ -12,7 +12,14 @@ const ROWS: { feature: string; free: string; pro: string }[] = [
   { feature: "Worktrees, submodules, Git LFS", free: "✓", pro: "✓" },
   { feature: "GitHub / GitLab pull requests", free: "Public repositories", pro: "Private and self-hosted too" },
   { feature: "Backport tracker", free: "Compare branches", pro: "Cherry-pick, export patches, ignore" },
-  { feature: "Repositories dashboard", free: "3 repositories", pro: "All of them" },
+  {
+    feature: "Repositories dashboard",
+    free: "3 repositories, fetch all",
+    pro: "All of them, batch pull and branch switch",
+  },
+  { feature: "Stacked branches", free: "—", pro: "Stack branches, restack in one go" },
+  { feature: "Release notes", free: "—", pro: "Markdown by type, with pull requests" },
+  { feature: "Air-gapped transfer", free: "—", pro: "Incremental bundles with checksums" },
 ];
 
 export default function Pricing() {
