@@ -20,4 +20,4 @@ export const DOWNLOADS_URL = process.env.NEXT_PUBLIC_DOWNLOADS_URL ?? "";
 export const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
 
 /** Login buttons on the account page, in order (each must be enabled in Supabase → Authentication → Providers). */
-export const LOGIN_PROVIDERS = ["github"] as const satisfies readonly ("github" | "google")[];
+export const LOGIN_PROVIDERS = ["github", "google"] as const satisfies readonly ("github" | "google")[];
