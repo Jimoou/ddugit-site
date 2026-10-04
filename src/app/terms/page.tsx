@@ -9,15 +9,17 @@ export default function Terms() {
       <p className="eyebrow">Legal</p>
       <h1>Terms of use</h1>
       <p className="note">Draft. These terms will be finalized before sales open.</p>
-      <h2>1. Who may use ddugit for free</h2>
+      <h2>1. Free and Pro</h2>
       <p>
-        Personal projects, students and open-source projects may use ddugit for free. Using it for work at a company or
-        for any paid activity needs a commercial license per user.
+        ddugit Free can be used by anyone, for any purpose. ddugit Pro adds the features listed on the pricing page and
+        needs a Pro subscription per user, or a site license for an organization. Every new install includes a 14-day
+        Pro trial.
       </p>
       <h2>2. Subscriptions and cancelling</h2>
       <p>
-        Commercial licenses are monthly or yearly subscriptions. If you cancel, you keep using it until the end of the
-        paid period and are not charged again. When a subscription ends nothing is locked; the app shows a reminder.
+        Pro is a monthly or yearly subscription. If you cancel, Pro stays on until the end of the paid period and you
+        are not charged again. When a subscription ends, Pro features lock; nothing you made with ddugit is changed or
+        removed.
       </p>
       <h2>3. Refunds</h2>
       <p>Ask within 7 days of payment for a full refund.</p>
