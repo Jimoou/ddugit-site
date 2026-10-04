@@ -3,7 +3,7 @@
 
 export const SITE = {
   name: "ddugit",
-  tagline: "그래프로 보고, 그래프로 다루는 Git.",
+  tagline: "See your Git as a graph. Work it as a graph.",
   url: "https://ddugit.com",
   contact: "support@ddugit.com",
 };
@@ -17,7 +17,8 @@ export const PRICES = { monthly: 4900, yearly: 49000 };
  */
 export const DOWNLOADS_URL = process.env.NEXT_PUBLIC_DOWNLOADS_URL ?? "";
 
-export const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
+/** Prices are in Korean won (the store charges in KRW). */
+export const won = (n: number) => `₩${n.toLocaleString("en-US")}`;
 
 /** Login buttons on the account page, in order (each must be enabled in Supabase → Authentication → Providers). */
 export const LOGIN_PROVIDERS = ["github", "google"] as const satisfies readonly ("github" | "google")[];

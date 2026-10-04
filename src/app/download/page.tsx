@@ -2,46 +2,49 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import DownloadButtons from "@/components/DownloadButtons";
 
-export const metadata: Metadata = { title: "다운로드" };
+export const metadata: Metadata = { title: "Download" };
 
 export default function Download() {
   return (
     <div className="page prose">
-      <h1>다운로드</h1>
+      <p className="eyebrow">Download</p>
+      <h1>Get ddugit</h1>
       <p>
-        로그인 없이 바로 내려받습니다. 상업적으로 쓰려면 <Link href="/pricing">라이선스</Link>가 필요합니다.
+        No sign-up needed. Work use at a company needs a <Link href="/pricing">commercial license</Link>.
       </p>
       <DownloadButtons />
 
       <h2>macOS</h2>
-      <p>macOS 11 이상, Apple Silicon과 Intel을 모두 지원합니다. Apple이 확인한(공증된) 앱이라 바로 열립니다.</p>
+      <p>macOS 11 or later, Apple silicon and Intel. The app is notarized by Apple, so it opens right away.</p>
       <ol className="steps">
         <li>
-          내려받은 <code>.dmg</code>를 엽니다.
+          Open the downloaded <code>.dmg</code>.
         </li>
-        <li>ddugit 아이콘을 응용 프로그램 폴더로 끌어다 놓습니다.</li>
+        <li>Drag ddugit into Applications.</li>
       </ol>
 
       <h2>Windows</h2>
-      <p>Windows 10 이상(64비트)을 지원합니다.</p>
+      <p>Windows 10 or later, 64-bit.</p>
       <div className="note">
-        아직 Windows 코드 서명 인증서가 없어서, 처음 실행할 때 “Windows의 PC 보호” 창이 뜰 수 있습니다.
+        The Windows build isn&apos;t code-signed yet, so the first launch may show &ldquo;Windows protected your
+        PC&rdquo;.
       </div>
       <ol className="steps">
         <li>
-          내려받은 <code>.exe</code>를 실행합니다.
+          Run the downloaded <code>.exe</code>.
         </li>
         <li>
-          “Windows의 PC 보호” 창이 뜨면 <strong>추가 정보</strong>를 누릅니다.
+          If &ldquo;Windows protected your PC&rdquo; appears, choose <strong>More info</strong>.
         </li>
         <li>
-          <strong>실행</strong>을 누르면 설치가 시작됩니다.
+          Choose <strong>Run anyway</strong> to install.
         </li>
       </ol>
 
-      <h2>필요한 것</h2>
+      <h2>Requirements</h2>
       <p>
-        컴퓨터에 <a href="https://git-scm.com/downloads">Git</a>이 설치되어 있어야 합니다.
+        <a href="https://git-scm.com/downloads">Git</a> installed on your computer. ddugit updates itself when a new
+        version is out.
       </p>
     </div>
   );

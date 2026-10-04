@@ -8,31 +8,28 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: { default: `${SITE.name} — ${SITE.tagline}`, template: `%s · ${SITE.name}` },
   description:
-    "ddugit은 커밋 그래프를 중심에 둔 macOS·Windows Git 클라이언트입니다. 끌어서 병합하고, rebase를 목록으로 정리하고, 여러 저장소를 한눈에 봅니다.",
+    "ddugit is a graph-first Git client for macOS and Windows. Drag to merge, tidy history from a list, and watch all your repositories at a glance.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko">
+    <html lang="en">
       <body>
         <header className="top">
           <Link href="/" className="brand" aria-label={SITE.name}>
             <Wordmark />
           </Link>
           <nav>
-            <Link href="/download">다운로드</Link>
-            <Link href="/pricing">가격</Link>
-            <Link href="/changelog">변경 내역</Link>
-            <Link href="/account" className="ghost">
-              내 계정
-            </Link>
+            <Link href="/download">Download</Link>
+            <Link href="/pricing">Pricing</Link>
+            <Link href="/account">Account</Link>
           </nav>
         </header>
         <main>{children}</main>
         <footer className="bottom">
           <span>© {new Date().getFullYear()} ddugit</span>
-          <Link href="/terms">이용약관</Link>
-          <Link href="/privacy">개인정보처리방침</Link>
+          <Link href="/terms">Terms</Link>
+          <Link href="/privacy">Privacy</Link>
           <a href={`mailto:${SITE.contact}`}>{SITE.contact}</a>
         </footer>
       </body>

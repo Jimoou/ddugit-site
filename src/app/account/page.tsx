@@ -6,7 +6,7 @@ import { LOGIN_PROVIDERS } from "@/site";
 import { OAuthButton } from "@/components/OAuthButton";
 import { signIn, signOut } from "./actions";
 
-export const metadata: Metadata = { title: "내 계정" };
+export const metadata: Metadata = { title: "Account" };
 
 export default async function Account({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
@@ -15,9 +15,10 @@ export default async function Account({ searchParams }: { searchParams: Promise<
   if (!user) {
     return (
       <div className="page prose">
-        <h1>내 계정</h1>
-        <p>라이선스를 사고 관리하는 곳입니다. 앱을 내려받고 쓰는 데는 로그인이 필요 없습니다.</p>
-        {error && <p className="note">로그인하지 못했어요. 다시 시도해 주세요.</p>}
+        <p className="eyebrow">Account</p>
+        <h1>Sign in</h1>
+        <p>Buy and manage commercial licenses here. Downloading and using the app needs no account.</p>
+        {error && <p className="note">Sign-in didn&apos;t go through. Please try again.</p>}
         {hasSupabase() ? (
           <div className="oauth-list">
             {/* Google's button guidelines ask for Roboto Medium; only this page needs it. */}
@@ -34,7 +35,7 @@ export default async function Account({ searchParams }: { searchParams: Promise<
             ))}
           </div>
         ) : (
-          <p className="muted small">로그인은 곧 열립니다.</p>
+          <p className="muted small">Sign-in opens soon.</p>
         )}
       </div>
     );
@@ -49,44 +50,47 @@ export default async function Account({ searchParams }: { searchParams: Promise<
     .order("created_at", { ascending: false });
   return (
     <div className="page prose">
-      <h1>내 계정</h1>
+      <p className="eyebrow">Account</p>
+      <h1>Your account</h1>
       <section className="card">
         <h3>{name}</h3>
         <p>{user.email}</p>
       </section>
-      <h2>라이선스</h2>
+      <h2>Licenses</h2>
       {licenses?.length ? (
         licenses.map((l) => (
           <section key={l.id} className="card license">
             <h3>
-              {l.kind === "site" ? "사이트 라이선스" : (PLAN[l.plan as string] ?? "상업용")} · {l.seats}명
+              {l.kind === "site" ? "Site license" : (PLAN[l.plan as string] ?? "Commercial")} · {l.seats}{" "}
+              {l.seats === 1 ? "seat" : "seats"}
             </h3>
             <p>
-              {l.paid_through ? `${l.paid_through}까지 결제됨` : "기간 없음"} · {STATUS[l.status as string] ?? l.status}
+              {l.paid_through ? `Paid through ${l.paid_through}` : "No end date"} ·{" "}
+              {STATUS[l.status as string] ?? l.status}
             </p>
             <p className="muted small">
-              앱의 설정 → 라이선스에 아래 글을 붙여 넣으세요. 구독이 이어지면 앱이 알아서 갱신합니다.
+              Paste this into Settings → License in the app. While the subscription runs, the app renews it by itself.
             </p>
             <textarea className="license-text" readOnly rows={3} value={l.text as string} />
           </section>
         ))
       ) : (
         <p>
-          {user.email} 로 산 라이선스가 없습니다. 구독은 곧 열려요. <Link href="/pricing">가격 보기</Link>
+          No licenses bought with {user.email} yet. Subscriptions open soon. <Link href="/pricing">See pricing</Link>
         </p>
       )}
       <form action={signOut}>
-        <button className="button">로그아웃</button>
+        <button className="button">Sign out</button>
       </form>
     </div>
   );
 }
 
-const PLAN: Record<string, string> = { monthly: "월간 구독", yearly: "연간 구독" };
+const PLAN: Record<string, string> = { monthly: "Monthly subscription", yearly: "Yearly subscription" };
 const STATUS: Record<string, string> = {
-  active: "사용 중",
-  on_trial: "체험 중",
-  cancelled: "해지됨(기간 끝까지 사용)",
-  past_due: "결제 확인 필요",
-  expired: "만료",
+  active: "Active",
+  on_trial: "Trial",
+  cancelled: "Cancelled (runs to the end of the period)",
+  past_due: "Payment needed",
+  expired: "Expired",
 };

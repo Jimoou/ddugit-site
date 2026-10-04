@@ -6,7 +6,7 @@ import { type Downloads, isDownloads, megabytes, osOf } from "@/downloads";
 
 type State = { kind: "loading" } | { kind: "ready"; data: Downloads } | { kind: "missing" };
 
-const LABEL = { macos: "macOS용 (.dmg)", windows: "Windows용 (.exe)" } as const;
+const LABEL = { macos: "macOS (.dmg)", windows: "Windows (.exe)" } as const;
 
 export default function DownloadButtons() {
   const [state, setState] = useState<State>(DOWNLOADS_URL ? { kind: "loading" } : { kind: "missing" });
@@ -24,9 +24,9 @@ export default function DownloadButtons() {
       .catch(() => setState({ kind: "missing" }));
   }, []);
 
-  if (state.kind === "loading") return <p className="muted">최신 버전을 확인하고 있어요…</p>;
+  if (state.kind === "loading") return <p className="muted">Checking the latest version…</p>;
   if (state.kind === "missing")
-    return <p className="note">설치 파일을 준비하고 있어요. 곧 이곳에서 내려받을 수 있습니다.</p>;
+    return <p className="note">The installers are being prepared. They will be here soon.</p>;
 
   const { data } = state;
   const order: (keyof Downloads["files"])[] = os === "windows" ? ["windows", "macos"] : ["macos", "windows"];
@@ -40,7 +40,7 @@ export default function DownloadButtons() {
         ))}
       </div>
       <p className="muted small">
-        버전 {data.version} · {data.date}
+        Version {data.version} · {data.date.slice(0, 10)}
       </p>
     </>
   );
