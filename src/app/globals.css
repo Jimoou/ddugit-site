@@ -1,0 +1,207 @@
+/* The app's look: deep space, neon accents, calm surfaces for reading. */
+:root {
+  --bg: #05040e;
+  --surface: rgba(255, 255, 255, 0.03);
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --text: #ece9ff;
+  --text-2: #b9b3d9;
+  --muted: #8a84ad;
+  --cyan: #22e8ff;
+  --magenta: #ff3dce;
+  --violet: #9b7bff;
+  --amber: #ffb347;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 70% -10%, rgba(155, 123, 255, 0.18), transparent 60%),
+    radial-gradient(900px 500px at 10% 10%, rgba(34, 232, 255, 0.1), transparent 60%), var(--bg);
+  color: var(--text);
+  font:
+    15px/1.65 -apple-system,
+    BlinkMacSystemFont,
+    "Pretendard",
+    "Apple SD Gothic Neo",
+    "Malgun Gothic",
+    sans-serif;
+  min-height: 100vh;
+}
+a {
+  color: inherit;
+}
+main {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 20px 80px;
+}
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 18px 20px;
+}
+.top nav {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+}
+.top nav a {
+  color: var(--text-2);
+  text-decoration: none;
+}
+.top nav a:hover {
+  color: var(--text);
+}
+.wordmark {
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -0.5px;
+  text-decoration: none;
+  background: linear-gradient(90deg, var(--cyan), var(--violet), var(--magenta));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.bottom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  justify-content: center;
+  padding: 28px 20px 40px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+}
+.bottom a {
+  color: var(--muted);
+}
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  letter-spacing: -0.3px;
+}
+.hero {
+  text-align: center;
+  padding: 72px 0 40px;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  margin: 0 0 14px;
+}
+.hero p {
+  color: var(--text-2);
+  font-size: 17px;
+  margin: 0 auto 28px;
+  max-width: 620px;
+}
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+  font: inherit;
+}
+.button.primary {
+  border-color: transparent;
+  background: linear-gradient(90deg, #7a5cff, #b04dff);
+  color: #fff;
+}
+.button[aria-disabled="true"],
+.button:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.muted {
+  color: var(--muted);
+}
+.small {
+  font-size: 13px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin: 32px 0;
+}
+.card {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 20px;
+}
+.card h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+.card p {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 14px;
+}
+.card.focus {
+  border-color: rgba(155, 123, 255, 0.6);
+  box-shadow: 0 0 0 1px rgba(155, 123, 255, 0.25);
+}
+.price {
+  font-size: 30px;
+  font-weight: 800;
+  margin: 8px 0 2px;
+}
+.page {
+  padding-top: 40px;
+}
+.page h1 {
+  font-size: 34px;
+  margin: 0 0 8px;
+}
+.prose {
+  max-width: 720px;
+  color: var(--text-2);
+}
+.prose h2 {
+  color: var(--text);
+  font-size: 20px;
+  margin-top: 32px;
+}
+.note {
+  border: 1px solid rgba(255, 179, 71, 0.4);
+  background: rgba(255, 179, 71, 0.06);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--text-2);
+  font-size: 14px;
+}
+code,
+kbd {
+  font-family: var(--mono);
+  font-size: 0.92em;
+}
+ol.steps li {
+  margin: 6px 0;
+}
+.grid.tight {
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
