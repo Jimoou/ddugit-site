@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SignInButtons } from "@/components/SignIn";
+import { AuthSplit } from "@/components/AuthSplit";
 import { activationTarget, usableLicense } from "@/lib/activate";
 import { hasSupabase } from "@/lib/supabase/config";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -26,12 +26,13 @@ export default async function Activate({ searchParams }: { searchParams: Promise
   const user = db ? (await db.auth.getUser()).data.user : null;
   if (!db || !user)
     return (
-      <div className="page prose">
-        <p className="eyebrow">Activate</p>
-        <h1>Sign in to activate ddugit Pro</h1>
-        <p>Use the account you bought Pro with. The app on this computer turns Pro on right after.</p>
-        {db ? <SignInButtons next={here} /> : <p className="muted small">Sign-in opens soon.</p>}
-      </div>
+      <AuthSplit
+        eyebrow="Activate"
+        title="Sign in to activate ddugit Pro"
+        lead="Use the account you bought Pro with. The app on this computer turns Pro on right after."
+        next={here}
+        configured={!!db}
+      />
     );
 
   const { data: rows } = await db
