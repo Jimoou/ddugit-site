@@ -9,6 +9,7 @@ import {
   callbackUrl,
   chooseLicense,
   sha256Hex,
+  testLicensesAllowed,
 } from "@/lib/activate";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -27,22 +28,22 @@ export async function activate(sent: ActivationTarget) {
   const { data } = await db.auth.getUser();
   if (!data.user) redirect(back);
 
-  const hash = target.device ? sha256Hex(target.device) : null;
+  const hash = target.device ? await sha256Hex(target.device) : null;
   const [{ data: rows }, { data: devices }] = await Promise.all([
     db
       .from("licenses")
-      .select("id, kind, plan, status, paid_through, max_devices, created_at")
+      .select("id, kind, plan, status, store_test, max_devices, created_at")
       .order("created_at", { ascending: false }),
     db.from("devices").select("license_id, device_hash, name, created_at, last_seen_at"),
   ]);
-  const chosen = chooseLicense(rows ?? [], new Date().toISOString().slice(0, 10), devices ?? [], hash);
+  const chosen = chooseLicense(rows ?? [], testLicensesAllowed(), devices ?? [], hash);
   // No license, full, or an app too old for a device-bound license: the page says which.
   if (!chosen || chosen.slot === "full" || (chosen.license.kind !== "site" && !hash)) redirect(back);
 
   const code = randomBytes(32).toString("base64url");
   const bound = chosen.license.kind !== "site";
   const { error } = await db.from("activations").insert({
-    code_hash: sha256Hex(code),
+    code_hash: await sha256Hex(code),
     license_id: chosen.license.id,
     device_hash: bound ? hash : null,
     device_name: bound ? target.name : null,

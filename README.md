@@ -18,11 +18,12 @@ npm run build
 
 - 판매: 평생 라이선스 하나(`site.ts`의 `PRO_PRICE`, 한 번 결제, 이후 업데이트 모두 포함), 라이선스당 기기 3대(`licenses.max_devices`). 사이트 라이선스(`kind = 'site'`)는 기기 제한이 없다
 - `supabase/migrations/`: `licenses`, `activations`, `devices` 테이블. 로그인한 사람은 자기 이메일로 산 라이선스와 그 기기만 읽고, 기기는 지울 수만 있다(RLS). 기기 추가는 함수(service role)만, 한도는 트리거(`devices_within_limit`)가 지킨다
-- `supabase/functions/license-activate`: `/activate`가 준 1회용 코드 + 앱의 기기 id → 기기 등록 후 그 기기용으로 서명한 라이선스(`ddugit.com/api/license/activate`)
+- `supabase/functions/license-activate`: `/activate`가 준 1회용 코드 + 앱의 기기 id → 라이선스가 쓸 수 있는지 먼저 확인(아래 규칙) → 기기 등록 후 그 기기용으로 서명한 라이선스(`ddugit.com/api/license/activate`)
 - `supabase/functions/license-deactivate`: 앱의 "이 기기 제거". 서명된 라이선스 + 기기 id → 기기 행 삭제(`ddugit.com/api/license/deactivate`)
-- `supabase/functions/license-refresh`: 예전 구독용(만료일 연장). 평생 라이선스는 그대로 돌려준다(`ddugit.com/api/license/refresh`)
-- `supabase/functions/ls-webhook`: Lemon Squeezy 웹훅. `order_created`(결제 완료) → 평생 라이선스 행(`store_order_id` = 주문 id, 기기 3대 × 수량), `order_refunded`(전액 환불) → `status = 'refunded'`(앱은 다음 확인 때 Pro를 끈다). 부분 환불·다른 이벤트·다른 상품은 200으로 무시. 같은 주문은 한 행(재전송·순서 바뀜에도 안전). 테스트 모드 주문은 `store_test = true`. 순수 로직은 `_shared/store.ts`
-- `supabase/functions/_shared/license.ts`: 라이선스 형식(앱의 `license.rs`와 같음). `npm test`
+- `supabase/functions/license-refresh`: 앱이 시작할 때·하루마다 갖고 있는 라이선스를 확인한다(`ddugit.com/api/license/refresh`). 쓸 수 있으면 그대로(사이트 라이선스는 저장된 최신 텍스트), 못 쓰면 `expired`, 기기에 묶인 라이선스의 행이 없거나 그 기기가 지워졌으면 `removed`(앱이 Pro를 끈다), 기기에 안 묶인 라이선스의 행이 없으면 `unknown`
+- 쓸 수 있는 라이선스 규칙(하나, `_shared/license.ts`의 `unusable`): 종류와 상관없이 `status = 'active'`이고, 스토어 테스트 주문(`store_test`)은 `ALLOW_TEST_LICENSES=true`일 때만. license-activate·license-refresh와 사이트의 `/activate`가 같은 규칙을 쓴다. 구독(월·연)은 판 적이 없어 코드에서 지웠다(`paid_through` 등 열은 남아 있지만 쓰지 않는다)
+- `supabase/functions/ls-webhook`: Lemon Squeezy 웹훅. `order_created`(결제 완료) → 평생 라이선스 행(`store_order_id` = 주문 id, 기기 3대 × 수량), `order_refunded`(전액 환불) → `status = 'refunded'`(앱은 다음 확인 때 Pro를 끈다). 부분 환불·다른 이벤트·다른 상품은 200으로 무시. 같은 주문은 한 행(재전송·순서 바뀜에도 안전). 테스트 모드 주문은 `store_test = true`. `LEMONSQUEEZY_PRODUCT_ID`가 없으면 아무 라이선스도 만들지 않고 500(로그: `not configured: LEMONSQUEEZY_PRODUCT_ID is not set`)을 돌려준다. 스토어가 다시 보내므로 설정한 뒤 들어온 주문은 처리된다. 순수 로직은 `_shared/store.ts`
+- `supabase/functions/_shared/license.ts`: 라이선스 형식(앱의 `license.rs`와 같음)과 사용 가능 규칙. 함수 공통은 `_shared/http.ts`(`json`, `env`, `handle`: POST만, 빠진 설정은 500 "not configured")와 `_shared/db.ts`(`serviceDb`, 서명 키). Next도 `_shared`의 순수 모듈(`license.ts`, `report.ts`, `email.ts`)을 직접 가져온다(`tsconfig`의 `allowImportingTsExtensions`). `npm test`
 - 배포: `main`에 `supabase/`가 바뀌면 `.github/workflows/supabase.yml`이 마이그레이션과 함수를 올린다
 
 한 번 설정:
@@ -32,10 +33,10 @@ npm run build
 3. 판매(Lemon Squeezy):
    1. 상품 하나: Single payment, `$29`(`site.ts`의 `PRO_PRICE`와 같게). 수량 선택을 켜면 한 주문이 기기 3대 × 수량이 된다
    2. Settings → Webhooks → 추가: URL `https://<project-ref>.supabase.co/functions/v1/ls-webhook`, 이벤트 `order_created`·`order_refunded`, Signing secret은 임의의 긴 값
-   3. Supabase → Edge Functions → Secrets: `LEMONSQUEEZY_WEBHOOK_SECRET` = 위 Signing secret. 선택: `LEMONSQUEEZY_PRODUCT_ID` = 상품 id(다른 상품 주문은 무시)
+   3. Supabase → Edge Functions → Secrets: `LEMONSQUEEZY_WEBHOOK_SECRET` = 위 Signing secret, **필수** `LEMONSQUEEZY_PRODUCT_ID` = Pro 상품 id(여러 개면 쉼표로, 예: `123456,123457`). 없으면 웹훅이 라이선스를 만들지 않는다(500). 다른 상품 주문은 무시
    4. 상품 → Share → 체크아웃 링크(`https://<store>.lemonsqueezy.com/buy/<variant-uuid>`)를 Netlify 환경 변수 `NEXT_PUBLIC_LS_CHECKOUT_URL`에 넣고 다시 배포한다. 없으면 가격 페이지 버튼은 "Available soon"
    5. 상품의 Confirmation modal → Button link(결제 후 이동)를 `https://ddugit.com/thanks`로
-   6. 테스트 모드로 한 번 사 본다: 계정 페이지에 "Test order"로 보이면 끝. 지우기는 `delete from public.licenses where store_test;`
+   6. 테스트 모드로 끝까지 사 보기: Supabase Secrets와 Netlify 환경 변수 **둘 다**에 `ALLOW_TEST_LICENSES=true`를 넣는다(없으면 테스트 주문은 계정 페이지에 "Test order"로 보이기만 하고 `/activate`가 고르지 않으며, license-activate는 "This license comes from a test purchase…"로 거절, license-refresh는 `expired`). 사 보고 앱에서 활성화해 본 뒤 두 곳에서 **지우고**(Netlify는 다시 배포), 테스트 라이선스는 지우지 말고 끈다: `update public.licenses set status = 'revoked' where store_test;`. 그러면 그 라이선스를 받은 앱은 다음 확인 때 Pro를 끈다(행을 지워도 기기에 묶인 라이선스는 `removed`로 꺼지지만, 기록이 남는 쪽이 낫다)
 
 구매 흐름: 가격 페이지 → `/checkout`(로그인 안 했으면 로그인 후 돌아옴) → Lemon Squeezy 체크아웃(`checkout[email]`·`checkout[custom][email]`에 로그인 이메일) → 웹훅이 그 이메일로 라이선스 행을 만든다 → `/thanks` → 앱의 설정 → License → "Sign in with ddugit.com". 결제 이메일을 바꿔도 라이선스는 로그인 이메일(`custom_data.email`)로 간다
 

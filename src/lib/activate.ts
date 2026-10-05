@@ -4,7 +4,23 @@
 // sends its device id and name: a license other than a site license is tied to at
 // most `max_devices` devices.
 
-import { createHash } from "node:crypto";
+import {
+  DEVICE_ID,
+  type DeviceSlot,
+  type LicenseRow as StoredLicense,
+  allowTestLicenses,
+  deviceBound,
+  deviceSlot as slotFor,
+  unusable,
+} from "../../supabase/functions/_shared/license.ts";
+
+export { type DeviceSlot, sha256Hex } from "../../supabase/functions/_shared/license.ts";
+
+/**
+ * Whether this deployment offers store test-mode licenses on /activate: ALLOW_TEST_LICENSES
+ * (server env), the same switch license-activate reads from its own secrets.
+ */
+export const testLicensesAllowed = () => allowTestLicenses(process.env.ALLOW_TEST_LICENSES);
 
 /** What the app asked for: its loopback port and state, and the device to activate. */
 export interface ActivationTarget {
@@ -15,9 +31,6 @@ export interface ActivationTarget {
   /** The device's name, cleaned up ("This computer" when none was sent). */
   name: string;
 }
-
-/** The app's device id: 32 random bytes, base64url without padding. */
-const DEVICE_ID = /^[A-Za-z0-9_-]{43}$/;
 
 /** Device names are shown, never trusted: no control characters, at most 64 characters. */
 export function deviceName(raw: unknown): string {
@@ -60,18 +73,11 @@ export function activatePath(t: ActivationTarget): string {
 export const callbackUrl = (t: { port: number; state: string }, code: string) =>
   `http://127.0.0.1:${t.port}/callback?code=${code}&state=${t.state}`;
 
-/** SHA-256 (hex) of a code or device id, as the database keeps them (same as the Edge Functions). */
-export const sha256Hex = (s: string) => createHash("sha256").update(s).digest("hex");
-
-export interface LicenseRow {
-  id: string;
+/** A license as the site reads it (with the user's session; RLS keeps it to their own). */
+export type LicenseRow = Pick<StoredLicense, "id" | "plan" | "status" | "store_test" | "max_devices"> & {
   kind: string;
-  plan?: string | null;
-  status: string;
-  paid_through: string | null;
-  max_devices?: number;
   created_at?: string;
-}
+};
 
 export interface DeviceRow {
   license_id: string;
@@ -81,38 +87,27 @@ export interface DeviceRow {
   last_seen_at: string;
 }
 
-/**
- * Whether a license can be activated: a lifetime license while the purchase stands,
- * a site license, or a (legacy) subscription paid through today or later.
- */
-export function usable(row: LicenseRow, today: string): boolean {
-  if (row.plan === "lifetime") return row.status === "active";
-  return row.paid_through === null || row.paid_through >= today;
-}
-
-/** Room for this device on a license: already on it, a free place, or full. */
-export type DeviceSlot = "registered" | "free" | "full";
-
+/** Room for this device on a license: already on it, a free place, or full. Site licenses always have room. */
 export function deviceSlot(license: LicenseRow, devices: DeviceRow[], hash: string | null): DeviceSlot {
-  if (license.kind === "site") return "free";
-  const mine = devices.filter((d) => d.license_id === license.id);
-  if (hash && mine.some((d) => d.device_hash === hash)) return "registered";
-  return mine.length < (license.max_devices ?? 3) ? "free" : "full";
+  if (!deviceBound(license)) return "free";
+  const mine = devices.filter((d) => d.license_id === license.id).map((d) => d.device_hash);
+  return slotFor(mine, hash ?? "", license.max_devices ?? 3);
 }
 
 /**
- * The license to activate on this device, newest first among the usable ones:
+ * The license to activate on this device, newest first among the usable ones (the rule
+ * license-activate applies: `unusable`, with `allowTest` from ALLOW_TEST_LICENSES):
  * one it is already on, else one with room (or a site license), else a full one.
  */
 export function chooseLicense<T extends LicenseRow>(
   rows: T[],
-  today: string,
+  allowTest: boolean,
   devices: DeviceRow[],
   hash: string | null,
 ): { license: T; slot: DeviceSlot } | null {
   const order: DeviceSlot[] = ["registered", "free", "full"];
   const ranked = rows
-    .filter((r) => usable(r, today))
+    .filter((r) => !unusable(r, allowTest))
     .map((license) => ({ license, slot: deviceSlot(license, devices, hash) }));
   for (const slot of order) {
     const found = ranked.find((r) => r.slot === slot);
@@ -124,10 +119,7 @@ export function chooseLicense<T extends LicenseRow>(
 /** How a license reads on the site: "Pro · lifetime", "Site license", … */
 export function licenseLabel(row: Pick<LicenseRow, "kind" | "plan">): string {
   if (row.kind === "site") return "Site license";
-  if (row.plan === "lifetime") return "Pro · lifetime";
-  if (row.plan === "yearly") return "Pro · yearly";
-  if (row.plan === "monthly") return "Pro · monthly";
-  return "Pro";
+  return row.plan === "lifetime" ? "Pro · lifetime" : "Pro";
 }
 
 /** Cookie holding where to go after signing in (`safeNext`). */
