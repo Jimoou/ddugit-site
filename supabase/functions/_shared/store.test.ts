@@ -1,7 +1,9 @@
 import { strict as assert } from "node:assert";
 import { createHmac } from "node:crypto";
 import { test } from "node:test";
-import { type StoreEvent, decide, newLicenseId, verifySignature } from "./store.ts";
+import { type StoreEvent, decide, newLicenseId, productIds, verifySignature } from "./store.ts";
+
+const PRO = ["77"];
 
 const sign = (secret: string, body: string) => createHmac("sha256", secret).update(body).digest("hex");
 const bytes = (s: string) => new TextEncoder().encode(s);
@@ -46,7 +48,7 @@ const order = (over: { event?: string; status?: string; custom?: unknown; quanti
   }) as StoreEvent;
 
 test("a paid order makes a lifetime license for three devices", () => {
-  assert.deepEqual(decide(order()), {
+  assert.deepEqual(decide(order(), PRO), {
     action: "create",
     row: {
       email: "pay@example.com",
@@ -56,7 +58,7 @@ test("a paid order makes a lifetime license for three devices", () => {
       status: "active",
       seats: 1,
       max_devices: 3,
-      text: "",
+      text: null,
       store_order_id: "1234",
       store_test: false,
     },
@@ -65,7 +67,7 @@ test("a paid order makes a lifetime license for three devices", () => {
 
 test("the license goes to the ddugit login passed at checkout, when it is an email", () => {
   const to = (custom: unknown) => {
-    const d = decide(order({ custom }));
+    const d = decide(order({ custom }), PRO);
     return d.action === "create" ? d.row.email : null;
   };
   assert.equal(to({ email: "Login@Example.com" }), "Login@Example.com");
@@ -75,36 +77,44 @@ test("the license goes to the ddugit login passed at checkout, when it is an ema
 });
 
 test("more copies, more devices; test mode is marked", () => {
-  const d = decide(order({ quantity: 2, test: true }));
+  const d = decide(order({ quantity: 2, test: true }), PRO);
   assert.equal(d.action, "create");
   if (d.action === "create") {
     assert.equal(d.row.max_devices, 6);
     assert.equal(d.row.store_test, true);
   }
-  const zero = decide(order({ quantity: 0 }));
+  const zero = decide(order({ quantity: 0 }), PRO);
   assert.equal(zero.action === "create" && zero.row.max_devices, 3);
 });
 
 test("a full refund takes the license back; a partial one doesn't", () => {
-  const full = decide(order({ event: "order_refunded", status: "refunded" }));
+  const full = decide(order({ event: "order_refunded", status: "refunded" }), PRO);
   assert.equal(full.action, "refund");
   assert.equal(full.action === "refund" && full.row.status, "refunded");
-  assert.equal(decide(order({ event: "order_refunded", status: "partial_refund" })).action, "ignore");
+  assert.equal(decide(order({ event: "order_refunded", status: "partial_refund" }), PRO).action, "ignore");
   // A retried order_created that already reads refunded never makes an active license.
-  assert.equal(decide(order({ status: "refunded" })).action, "refund");
+  assert.equal(decide(order({ status: "refunded" }), PRO).action, "refund");
 });
 
 test("other events, unpaid orders and other products change nothing", () => {
-  assert.equal(decide(order({ event: "subscription_created" })).action, "ignore");
-  assert.equal(decide(order({ status: "pending" })).action, "ignore");
-  assert.equal(decide(order({ status: "fraudulent" })).action, "ignore");
-  assert.equal(decide(order(), "77").action, "create");
-  assert.equal(decide(order(), "99").action, "ignore");
+  assert.equal(decide(order({ event: "subscription_created" }), PRO).action, "ignore");
+  assert.equal(decide(order({ status: "pending" }), PRO).action, "ignore");
+  assert.equal(decide(order({ status: "fraudulent" }), PRO).action, "ignore");
+  assert.equal(decide(order(), ["99", "77"]).action, "create");
+  assert.equal(decide(order(), ["99"]).action, "ignore");
   assert.equal(
-    decide({ meta: { event_name: "order_created" }, data: { type: "subscriptions", id: 1 } }).action,
+    decide({ meta: { event_name: "order_created" }, data: { type: "subscriptions", id: 1 } }, PRO).action,
     "ignore",
   );
   const noEmail = order();
   noEmail.data!.attributes!.user_email = "";
-  assert.equal(decide(noEmail).action, "ignore");
+  assert.equal(decide(noEmail, PRO).action, "ignore");
+});
+
+test("without product ids nothing makes a license; the setting is a comma-separated list", () => {
+  assert.equal(decide(order(), []).action, "ignore");
+  assert.equal(decide(order({ event: "order_refunded", status: "refunded" }), []).action, "ignore");
+  assert.deepEqual(productIds(" 77, 78 ,,"), ["77", "78"]);
+  assert.deepEqual(productIds(""), []);
+  assert.deepEqual(productIds(undefined), []);
 });

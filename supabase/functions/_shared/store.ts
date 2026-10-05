@@ -8,6 +8,8 @@
 //     data: { type: "orders", id, attributes: { user_name, user_email, status, refunded,
 //             first_order_item: { product_id, variant_id, quantity, … }, … } } }
 
+import { isEmail } from "./email.ts";
+
 /** Devices one Pro purchase covers (`site.ts`'s DEVICES); `quantity` copies cover that many times more. */
 export const DEVICES_PER_COPY = 3;
 
@@ -62,7 +64,8 @@ export interface PurchaseRow {
   status: "active" | "refunded";
   seats: 1;
   max_devices: number;
-  text: "";
+  /** Lifetime licenses are signed per device at activation: no stored text. */
+  text: null;
   store_order_id: string;
   store_test: boolean;
 }
@@ -78,14 +81,22 @@ export type Decision =
   | { action: "refund"; row: PurchaseRow }
   | { action: "ignore"; reason: string };
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/**
+ * LEMONSQUEEZY_PRODUCT_ID: the store products that are ddugit Pro, comma-separated.
+ * Required: with none, the webhook refuses to make licenses (any product in the store would).
+ */
+export const productIds = (raw: string | null | undefined) =>
+  (raw ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
 
 /**
- * The decision for one webhook. `productId`: when set (LEMONSQUEEZY_PRODUCT_ID), orders
- * for other products are ignored. The license goes to `custom_data.email` when the site
- * passed one at checkout (the buyer's ddugit.com login), else to the email they paid with.
+ * The decision for one webhook. Orders for products not in `products` (`productIds` of LEMONSQUEEZY_PRODUCT_ID)
+ * are ignored, and with an empty list every order is. The license goes to `custom_data.email`
+ * when the site passed one at checkout (the buyer's ddugit.com login), else to the email they paid with.
  */
-export function decide(event: StoreEvent, productId?: string): Decision {
+export function decide(event: StoreEvent, products: readonly string[]): Decision {
   const name = event.meta?.event_name ?? "";
   if (name !== "order_created" && name !== "order_refunded") return { action: "ignore", reason: `event ${name}` };
   const order = event.data;
@@ -93,12 +104,11 @@ export function decide(event: StoreEvent, productId?: string): Decision {
   if (order?.type !== "orders" || order.id === undefined || !a) return { action: "ignore", reason: "not an order" };
 
   const item = a.first_order_item;
-  if (productId && String(item?.product_id ?? "") !== productId.trim())
-    return { action: "ignore", reason: "another product" };
+  if (!products.includes(String(item?.product_id ?? ""))) return { action: "ignore", reason: "another product" };
 
   const custom = event.meta?.custom_data?.email;
-  const email = (typeof custom === "string" && EMAIL.test(custom.trim()) ? custom : (a.user_email ?? "")).trim();
-  if (!EMAIL.test(email)) return { action: "ignore", reason: "no buyer email" };
+  const email = (typeof custom === "string" && isEmail(custom.trim()) ? custom : (a.user_email ?? "")).trim();
+  if (!isEmail(email)) return { action: "ignore", reason: "no buyer email" };
 
   // Only a full refund takes the license back; a partial one (e.g. tax) leaves it.
   const refunded = a.status === "refunded";
@@ -115,7 +125,7 @@ export function decide(event: StoreEvent, productId?: string): Decision {
     status: refunded ? "refunded" : "active",
     seats: 1,
     max_devices: copies * DEVICES_PER_COPY,
-    text: "",
+    text: null,
     store_order_id: String(order.id),
     store_test: event.meta?.test_mode === true,
   };

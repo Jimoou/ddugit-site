@@ -13,6 +13,7 @@ export function GET() {
     supabaseUrl: names.url,
     supabaseKey: names.key,
     downloadsUrl: DOWNLOADS_URL ? "NEXT_PUBLIC_DOWNLOADS_URL" : null,
+    reportForward: process.env.REPORT_FORWARD_SECRET?.trim() ? "REPORT_FORWARD_SECRET" : null,
     commit: process.env.COMMIT_REF?.slice(0, 7) ?? null,
   });
 }

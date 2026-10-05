@@ -35,7 +35,7 @@ export default async function Account({ searchParams }: { searchParams: Promise<
   const [{ data: licenses }, { data: devices }, { data: admin }] = await Promise.all([
     db
       .from("licenses")
-      .select("id, kind, plan, seats, status, paid_through, max_devices, text, store_test")
+      .select("id, kind, plan, seats, status, max_devices, text, store_test")
       .order("created_at", { ascending: false }),
     db
       .from("devices")
@@ -68,7 +68,9 @@ export default async function Account({ searchParams }: { searchParams: Promise<
                     In the app, choose Settings → License → “Activate with your ddugit.com account”. Offline? Paste this
                     text there instead.
                   </p>
-                  {l.text && <textarea className="license-text" readOnly rows={3} value={l.text as string} />}
+                  {l.text && l.status === "active" && (
+                    <textarea className="license-text" readOnly rows={3} value={l.text as string} />
+                  )}
                 </>
               ) : (
                 <>
@@ -76,11 +78,7 @@ export default async function Account({ searchParams }: { searchParams: Promise<
                     {licenseLabel(l)} · {mine.length} of {max} devices
                   </h3>
                   <p>
-                    {l.plan === "lifetime"
-                      ? "Paid once. Every future update included."
-                      : l.paid_through
-                        ? `Paid through ${l.paid_through}`
-                        : "No end date"}
+                    Paid once. Every future update included.
                     {l.status !== "active" ? ` · ${STATUS[l.status as string] ?? l.status}` : ""}
                     {l.store_test ? " · Test order" : ""}
                   </p>
@@ -113,7 +111,5 @@ export default async function Account({ searchParams }: { searchParams: Promise<
 
 const STATUS: Record<string, string> = {
   refunded: "Refunded",
-  cancelled: "Cancelled",
-  past_due: "Payment needed",
-  expired: "Expired",
+  revoked: "Revoked",
 };

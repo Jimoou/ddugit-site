@@ -15,6 +15,7 @@ import {
   excerpt,
   parseFilters,
 } from "@/lib/admin";
+import { replyLink } from "@shared/email.ts";
 import { hasSupabase } from "@/lib/supabase/config";
 import { supabaseServer } from "@/lib/supabase/server";
 import { saveNote, setStatus } from "./actions";
@@ -181,6 +182,7 @@ function Chips({ label, items }: { label: string; items: { text: string; href: s
 function Row({ r, filters }: { r: Report; filters: Filters }) {
   // Actions come back to this view with this report open.
   const here = adminHref(filters, { open: r.id });
+  const reply = r.email ? replyLink(r.email, "Re: your message to ddugit") : null;
   return (
     <li id={`r-${r.id}`}>
       <details className={`report status-${r.status}`} open={filters.open === r.id}>
@@ -198,10 +200,11 @@ function Row({ r, filters }: { r: Report; filters: Filters }) {
             <div>
               <dt>Reply to</dt>
               <dd>
-                {r.email ? (
-                  <a href={`mailto:${r.email}?subject=${encodeURIComponent("Re: your message to ddugit")}`}>
-                    {r.email}
-                  </a>
+                {reply ? (
+                  <a href={reply}>{r.email}</a>
+                ) : r.email ? (
+                  // Not a plain address (stored before the stricter check): shown, never linked.
+                  <span>{r.email}</span>
                 ) : (
                   <span className="muted">No email given</span>
                 )}

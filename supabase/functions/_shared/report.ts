@@ -2,7 +2,14 @@
 // The request contract the app and the site's /contact form share:
 //   { kind: "bug" | "question", message, email?, diagnostics?, source: "app" | "web",
 //     appVersion?, os?, website? (honeypot) }
-// Pure checks only, so they run in the Edge Function (Deno) and in Node tests alike.
+// Pure checks only, so they run in the Edge Function (Deno), Next and Node tests alike.
+//
+// Only the site may call the function: the Next route sends REPORT_FORWARD_SECRET in
+// `x-ddugit-forward`, and only then is its `x-ddugit-client-ip` (the visitor's IP, for
+// the rate limit) believed. Called directly, the function answers 403.
+
+import { isReplyEmail } from "./email.ts";
+import { sha256Hex } from "./license.ts";
 
 export const KINDS = ["bug", "question"] as const;
 export const SOURCES = ["app", "web"] as const;
@@ -17,7 +24,7 @@ export const LIMITS = { message: 5000, email: 254, diagnostics: 20000, appVersio
 
 /** Reports one sender (salted IP hash) may send per hour. */
 export const PER_SENDER_HOUR = 5;
-/** Reports everyone together may send per hour: a backstop if forwarded IPs are spoofed. */
+/** Reports everyone together may send per hour: a backstop against a flood through the site. */
 export const ALL_HOUR = 200;
 
 export const TOO_MANY = "Too many reports. Try again later.";
@@ -36,8 +43,6 @@ export interface Report {
 export type Checked = { ok: true; report: Report } | { ok: false; error: string };
 
 const chars = (s: string) => [...s].length;
-
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** A filled-in honeypot (`website`): a bot. Answer as if stored, store nothing. */
 export const isBot = (body: unknown) => {
@@ -68,7 +73,7 @@ export function checkReport(body: unknown): Checked {
   if (chars(message) > LIMITS.message)
     return { ok: false, error: `The message is too long (at most ${LIMITS.message} characters).` };
   const email = optional(b.email, LIMITS.email);
-  if (email === undefined || (email !== null && !EMAIL.test(email)))
+  if (email === undefined || (email !== null && !isReplyEmail(email)))
     return { ok: false, error: "The email address doesn't look right." };
   const diagnostics = optional(b.diagnostics, LIMITS.diagnostics);
   if (diagnostics === undefined)
@@ -91,32 +96,42 @@ export function checkReport(body: unknown): Checked {
   };
 }
 
-/** Something that looks like an IPv4 or IPv6 address (no ports, no names). */
+/** The header carrying REPORT_FORWARD_SECRET from the site to the function. */
+export const FORWARD_HEADER = "x-ddugit-forward";
+/** The header carrying the visitor's IP from the site to the function. */
+export const CLIENT_IP_HEADER = "x-ddugit-client-ip";
+
 const IP = /^[0-9A-Fa-f:.]{2,45}$/;
 
+/** Something that looks like an IPv4 or IPv6 address (no ports, no names). */
+export const isIp = (s: string) => IP.test(s);
+
+const digest = async (s: string) => new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)));
+
 /**
- * The sender's IP as the site forwarded it: `x-ddugit-client-ip` (set by the Next route),
- * else the first `x-forwarded-for` entry, else `cf-connecting-ip`. Null when none looks like an IP.
+ * Whether the request came through the site: its `x-ddugit-forward` is `secret`. Compared
+ * in constant time (as SHA-256 digests, so the length doesn't leak either). No secret, no pass.
+ */
+export async function forwardedBySite(headers: { get(name: string): string | null }, secret: string) {
+  const sent = headers.get(FORWARD_HEADER);
+  if (!secret || !sent) return false;
+  const [a, b] = await Promise.all([digest(sent), digest(secret)]);
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
+}
+
+/**
+ * The sender's IP as the site forwarded it (`x-ddugit-client-ip`); null when it doesn't look
+ * like an IP. Only meaningful once `forwardedBySite` passed: nothing else is trusted.
  */
 export function senderIp(headers: { get(name: string): string | null }): string | null {
-  const candidates = [
-    headers.get("x-ddugit-client-ip"),
-    headers.get("x-forwarded-for")?.split(",")[0],
-    headers.get("cf-connecting-ip"),
-  ];
-  for (const c of candidates) {
-    const ip = c?.trim();
-    if (ip && IP.test(ip)) return ip.toLowerCase();
-  }
-  return null;
+  const ip = headers.get(CLIENT_IP_HEADER)?.trim();
+  return ip && isIp(ip) ? ip.toLowerCase() : null;
 }
 
 /** SHA-256 (hex) of `salt:ip`: what is kept instead of the IP, for rate limiting only. */
-export async function senderHash(salt: string, ip: string | null): Promise<string> {
-  const data = new TextEncoder().encode(`${salt}:${ip ?? "unknown"}`);
-  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", data));
-  return [...digest].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
+export const senderHash = (salt: string, ip: string | null): Promise<string> => sha256Hex(`${salt}:${ip ?? "unknown"}`);
 
 /**
  * Whether one more report may be stored, given how many this sender and everyone

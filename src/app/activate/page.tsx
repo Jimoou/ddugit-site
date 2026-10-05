@@ -2,7 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AuthSplit } from "@/components/AuthSplit";
 import { Devices } from "@/components/Devices";
-import { activatePath, activationTarget, chooseLicense, licenseLabel, sha256Hex } from "@/lib/activate";
+import {
+  activatePath,
+  activationTarget,
+  chooseLicense,
+  licenseLabel,
+  sha256Hex,
+  testLicensesAllowed,
+} from "@/lib/activate";
 import { hasSupabase } from "@/lib/supabase/config";
 import { supabaseServer } from "@/lib/supabase/server";
 import { activate } from "./actions";
@@ -38,18 +45,18 @@ export default async function Activate({ searchParams }: { searchParams: Promise
       />
     );
 
-  const hash = target.device ? sha256Hex(target.device) : null;
+  const hash = target.device ? await sha256Hex(target.device) : null;
   const [{ data: rows }, { data: devices }] = await Promise.all([
     db
       .from("licenses")
-      .select("id, kind, plan, status, paid_through, max_devices, created_at")
+      .select("id, kind, plan, status, store_test, max_devices, created_at")
       .order("created_at", { ascending: false }),
     db
       .from("devices")
       .select("license_id, device_hash, name, created_at, last_seen_at")
       .order("created_at", { ascending: true }),
   ]);
-  const chosen = chooseLicense(rows ?? [], new Date().toISOString().slice(0, 10), devices ?? [], hash);
+  const chosen = chooseLicense(rows ?? [], testLicensesAllowed(), devices ?? [], hash);
   if (!chosen)
     return (
       <div className="page prose">

@@ -13,9 +13,9 @@ export interface LicenseInfo {
   issued: string;
   /** Versions released up to this date are covered (YYYY-MM-DD). */
   updatesUntil: string;
-  /** Subscriptions: paid through + grace (YYYY-MM-DD). The app only reminds after it. */
+  /** Only in licenses issued by hand with an end date (YYYY-MM-DD); the app reminds after it. */
   expires?: string;
-  /** `lifetime`, or a `monthly` / `yearly` subscription; absent for a site license. */
+  /** `lifetime`; absent for a site license. */
   plan?: string;
   /** SHA-256 (hex) of the one device id this license works on; absent = not tied to a device (site licenses). */
   device?: string;
@@ -68,21 +68,6 @@ export async function readLicense(key: CryptoKey, text: string): Promise<License
   }
 }
 
-/** Days after the paid period a subscription license keeps going (renewals land late). */
-export const GRACE_DAYS = 7;
-
-export const addDays = (date: string, days: number) => {
-  const d = new Date(`${date}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-};
-
-/** The license a subscription paid through `paidThrough` (YYYY-MM-DD) earns. */
-export function renewed(info: LicenseInfo, paidThrough: string, today: string): LicenseInfo {
-  const expires = addDays(paidThrough, GRACE_DAYS);
-  return { ...info, issued: today, expires, updatesUntil: expires };
-}
-
 /** "Updates until" of a lifetime license: every future version. */
 export const LIFETIME_UPDATES = "9999-12-31";
 
@@ -100,14 +85,17 @@ export interface LicenseRow {
   id: string;
   name: string;
   email: string;
+  /** `personal` (bought online), `commercial` (issued by hand) or `site` (a whole organisation). */
   kind?: string;
-  /** `lifetime`, `monthly`, `yearly`, or null for a site license. */
+  /** `lifetime`, or null for a site license. */
   plan?: string | null;
-  status?: string;
+  /** `active`, `refunded`, `revoked`, …: anything but `active` turns the license off. */
+  status: string;
+  /** An order placed in the store's test mode. */
+  store_test?: boolean;
   seats: number;
   max_devices?: number;
-  paid_through: string | null;
-  /** The stored text; site licenses and subscriptions only (a lifetime license is signed per device). */
+  /** The stored text; site licenses only (every other license is signed per device). */
   text: string | null;
 }
 
@@ -129,31 +117,44 @@ export function lifetimeLicense(row: LicenseRow, today: string, device: string):
   };
 }
 
+/** Why a license can't be used: not active any more (refunded, revoked, …), or a store test-mode order. */
+export type Unusable = "inactive" | "test";
+
 /**
- * The license text a row grants today: a site license as it is; a lifetime license
- * signed for `device` (while the purchase stands); a subscription paid through today
- * or later, renewed through its period; null otherwise.
- * `fallback` stands in when the stored text can't be read (it shouldn't happen).
+ * Whether a license may be activated or kept: the one rule license-activate,
+ * license-refresh and the site's /activate page share. Every kind of license needs
+ * `status = 'active'`; a test-mode order works only where `allowTest` (ALLOW_TEST_LICENSES).
  */
-export async function currentText(
-  row: LicenseRow,
-  today: string,
-  keys: { sign: CryptoKey; verify: CryptoKey },
-  fallback?: LicenseInfo,
-  device?: string,
-): Promise<string | null> {
-  if (row.plan === "lifetime") {
-    const bound = device ?? fallback?.device;
-    if ((row.status ?? "active") !== "active" || !bound) return null;
-    return signLicense(keys.sign, lifetimeLicense(row, today, bound));
-  }
-  if (!row.paid_through) return row.text;
-  if (row.paid_through < today) return null;
-  const current = (row.text ? await readLicense(keys.verify, row.text) : null) ?? fallback;
-  if (!current) return null;
-  const info = { ...current, seats: row.seats, name: row.name, email: row.email };
-  if (device) info.device = device;
-  return signLicense(keys.sign, renewed(info, row.paid_through, today));
+export function unusable(row: Pick<LicenseRow, "status" | "store_test">, allowTest: boolean): Unusable | null {
+  if (row.status !== "active") return "inactive";
+  if (row.store_test && !allowTest) return "test";
+  return null;
+}
+
+/** ALLOW_TEST_LICENSES: `true` (or `1`) lets store test-mode orders activate, for trying a purchase end to end. */
+export const allowTestLicenses = (value: string | null | undefined) => /^(true|1)$/i.test(value?.trim() ?? "");
+
+/** What the app shows when a license can't be activated. */
+export const UNUSABLE_MESSAGE: Record<Unusable, string> = {
+  inactive: "This license is no longer active. Write to support@ddugit.com.",
+  test: "This license comes from a test purchase and can't be activated.",
+};
+
+/**
+ * license-refresh's answer for a license the app holds, before its device is checked:
+ * - `removed` when its row is gone and it was tied to a device (every such license is
+ *   issued here, so a missing row means it was taken away);
+ * - `unknown` when a license not tied to a device has no row (e.g. one issued offline);
+ * - `expired` when the row exists but is no longer usable (`unusable`);
+ * - null: still good.
+ */
+export function refreshStatus(
+  held: Pick<LicenseInfo, "device">,
+  row: Pick<LicenseRow, "status" | "store_test"> | null,
+  allowTest: boolean,
+): "removed" | "unknown" | "expired" | null {
+  if (!row) return held.device ? "removed" : "unknown";
+  return unusable(row, allowTest) ? "expired" : null;
 }
 
 /** Room for a device on a license with `registered` device hashes. */

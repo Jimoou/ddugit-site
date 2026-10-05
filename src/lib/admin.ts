@@ -1,21 +1,23 @@
 // The reports dashboard (/admin): its filters live in the URL, so every view is a link.
 
+import { KINDS, type Kind, SOURCES, type Source } from "../../supabase/functions/_shared/report.ts";
+
+export { KINDS, SOURCES };
+
 export const STATUSES = ["new", "read", "done"] as const;
-export const KINDS = ["bug", "question"] as const;
-export const SOURCES = ["app", "web"] as const;
 export type Status = (typeof STATUSES)[number];
 
 export const STATUS_LABEL: Record<Status, string> = { new: "New", read: "Read", done: "Done" };
-export const KIND_LABEL: Record<(typeof KINDS)[number], string> = { bug: "Problem", question: "Question" };
-export const SOURCE_LABEL: Record<(typeof SOURCES)[number], string> = { app: "App", web: "Website" };
+export const KIND_LABEL: Record<Kind, string> = { bug: "Problem", question: "Question" };
+export const SOURCE_LABEL: Record<Source, string> = { app: "App", web: "Website" };
 
 /** Reports shown per page. */
 export const PAGE = 50;
 
 export interface Filters {
   status?: (typeof STATUSES)[number];
-  kind?: (typeof KINDS)[number];
-  source?: (typeof SOURCES)[number];
+  kind?: Kind;
+  source?: Source;
   /** Show reports created before this time (ISO): the next page. */
   before?: string;
   /** The report shown expanded. */

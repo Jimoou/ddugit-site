@@ -11,8 +11,8 @@ export const SITE = {
 /** Pro: one payment in US dollars, used forever with every future update, on up to `DEVICES` devices. */
 export const PRO_PRICE = 29;
 
-/** Devices one Pro license can be activated on at a time. */
-export const DEVICES = 3;
+/** Devices one Pro license can be activated on at a time (the store webhook's `DEVICES_PER_COPY`). */
+export { DEVICES_PER_COPY as DEVICES } from "../supabase/functions/_shared/store.ts";
 
 /**
  * `downloads.json` in the public `releases` bucket (Supabase Storage):

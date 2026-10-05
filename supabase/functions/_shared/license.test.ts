@@ -3,29 +3,28 @@ import { test } from "node:test";
 import {
   type LicenseInfo,
   LIFETIME_UPDATES,
-  addDays,
+  allowTestLicenses,
   checkActivationDevice,
   checkDeactivation,
-  currentText,
   deviceBound,
   deviceSlot,
   fullMessage,
+  lifetimeLicense,
   readLicense,
-  renewed,
+  refreshStatus,
   sha256Hex,
   signLicense,
+  unusable,
 } from "./license.ts";
 
 const info: LicenseInfo = {
   id: "lic_1",
   name: "Acme",
   email: "it@acme.example",
-  kind: "commercial",
-  seats: 1,
+  kind: "site",
+  seats: 10,
   issued: "2026-10-04",
-  updatesUntil: "2026-11-11",
-  expires: "2026-11-11",
-  plan: "monthly",
+  updatesUntil: "2027-10-04",
 };
 
 async function keys() {
@@ -52,15 +51,6 @@ test("a tampered, foreign or garbled license is refused", async () => {
   assert.equal(await readLicense(a.publicKey, "DDUGIT1.abc"), null);
 });
 
-test("a renewal runs to the paid date plus the grace week", () => {
-  assert.equal(addDays("2026-12-28", 7), "2027-01-04");
-  const r = renewed(info, "2026-12-04", "2026-11-04");
-  assert.equal(r.expires, "2026-12-11");
-  assert.equal(r.updatesUntil, "2026-12-11");
-  assert.equal(r.issued, "2026-11-04");
-  assert.equal(r.id, info.id);
-});
-
 test("keys in the formats scripts/license.mjs writes (PKCS#8 PEM, base64url public)", async () => {
   const { generateKeyPairSync } = await import("node:crypto");
   const pair = generateKeyPairSync("ed25519");
@@ -69,20 +59,6 @@ test("keys in the formats scripts/license.mjs writes (PKCS#8 PEM, base64url publ
   const { privateKey, publicKey } = await import("./license.ts");
   const text = await signLicense(await privateKey(pem), info);
   assert.deepEqual(await readLicense(await publicKey(pub), text), info);
-});
-
-test("a row's license today: site as it is, paid subscriptions renewed, lapsed ones none", async () => {
-  const { privateKey, publicKey } = await keys();
-  const keysFor = { sign: privateKey, verify: publicKey };
-  const text = await signLicense(privateKey, info);
-  const row = { id: info.id, name: "Acme Corp", email: info.email, seats: 3, paid_through: "2026-12-04", text };
-
-  const fresh = await readLicense(publicKey, (await currentText(row, "2026-11-04", keysFor))!);
-  assert.equal(fresh?.expires, "2026-12-11");
-  assert.equal(fresh?.seats, 3);
-  assert.equal(fresh?.name, "Acme Corp");
-  assert.equal(await currentText(row, "2026-12-05", keysFor), null);
-  assert.equal(await currentText({ ...row, paid_through: null }, "2030-01-01", keysFor), text);
 });
 
 const HASH = "a".repeat(64);
@@ -95,14 +71,12 @@ const lifetimeRow = {
   status: "active",
   seats: 1,
   max_devices: 3,
-  paid_through: null,
   text: null,
 };
 
 test("a lifetime license is signed for one device, with every update and no expiry", async () => {
   const { privateKey, publicKey } = await keys();
-  const keysFor = { sign: privateKey, verify: publicKey };
-  const text = (await currentText(lifetimeRow, "2026-10-05", keysFor, undefined, HASH))!;
+  const text = await signLicense(privateKey, lifetimeLicense(lifetimeRow, "2026-10-05", HASH));
   assert.deepEqual(await readLicense(publicKey, text), {
     id: "lic_9",
     name: "Mina",
@@ -127,27 +101,30 @@ test("a lifetime license is signed for one device, with every update and no expi
     "plan",
     "device",
   ]);
-  // No paid period needed; never without a device; not once the purchase is undone.
-  assert.equal(await currentText(lifetimeRow, "2099-01-01", keysFor), null);
-  assert.equal(await currentText({ ...lifetimeRow, status: "refunded" }, "2026-10-05", keysFor, undefined, HASH), null);
-  const again = await currentText(lifetimeRow, "2030-01-01", keysFor, { ...info, device: HASH });
-  assert.equal((await readLicense(publicKey, again!))?.device, HASH);
 });
 
-test("a subscription activated on a device keeps the device through renewals", async () => {
-  const { privateKey, publicKey } = await keys();
-  const keysFor = { sign: privateKey, verify: publicKey };
-  const row = {
-    ...lifetimeRow,
-    kind: "commercial",
-    plan: "monthly",
-    paid_through: "2026-12-04",
-    text: await signLicense(privateKey, info),
-  };
-  const text = await currentText(row, "2026-11-04", keysFor, undefined, HASH);
-  assert.equal((await readLicense(publicKey, text!))?.device, HASH);
-  const plain = await currentText(row, "2026-11-04", keysFor);
-  assert.equal((await readLicense(publicKey, plain!))?.device, undefined);
+test("every kind of license needs to be active; test orders only where allowed", () => {
+  assert.equal(unusable(lifetimeRow, false), null);
+  for (const status of ["refunded", "revoked", "cancelled", "expired"]) {
+    assert.equal(unusable({ ...lifetimeRow, status }, true), "inactive", status);
+    assert.equal(unusable({ ...lifetimeRow, kind: "site", plan: null, status }, true), "inactive", `site ${status}`);
+  }
+  assert.equal(unusable({ ...lifetimeRow, store_test: true }, false), "test");
+  assert.equal(unusable({ ...lifetimeRow, store_test: true }, true), null);
+  assert.equal(unusable({ ...lifetimeRow, store_test: true, status: "refunded" }, true), "inactive");
+  for (const on of ["true", "TRUE", " 1 "]) assert.equal(allowTestLicenses(on), true, on);
+  for (const off of [undefined, null, "", "false", "0", "yes"])
+    assert.equal(allowTestLicenses(off), false, String(off));
+});
+
+test("refresh: a missing row removes a device-bound license; an unusable one expires", () => {
+  assert.equal(refreshStatus({ device: HASH }, null, false), "removed");
+  assert.equal(refreshStatus({}, null, false), "unknown");
+  assert.equal(refreshStatus({ device: HASH }, { status: "refunded" }, false), "expired");
+  assert.equal(refreshStatus({}, { status: "revoked" }, false), "expired");
+  assert.equal(refreshStatus({ device: HASH }, { status: "active", store_test: true }, false), "expired");
+  assert.equal(refreshStatus({ device: HASH }, { status: "active", store_test: true }, true), null);
+  assert.equal(refreshStatus({}, { status: "active" }, false), null);
 });
 
 test("device ids are hashed as SHA-256 hex of their text", async () => {

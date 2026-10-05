@@ -11,7 +11,6 @@ import {
   licenseLabel,
   safeNext,
   sha256Hex,
-  usable,
 } from "./activate.ts";
 
 const STATE = "abcDEF0123456789_-xyz";
@@ -65,16 +64,16 @@ test("the activation page comes back with everything the app sent", () => {
   assert.equal(activatePath(activationTarget("53682", STATE)!), `/activate?port=53682&state=${STATE}`);
 });
 
-test("device ids are kept as the SHA-256 hex of their text", () => {
-  assert.equal(sha256Hex("abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+test("device ids are kept as the SHA-256 hex of their text", async () => {
+  assert.equal(await sha256Hex("abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
 });
 
-const lic = (id: string, extra: Partial<Parameters<typeof usable>[0]> = {}) => ({
+const lic = (id: string, extra: Partial<Parameters<typeof deviceSlot>[0]> = {}) => ({
   id,
   kind: "personal",
   plan: "lifetime",
   status: "active",
-  paid_through: null,
+  store_test: false,
   max_devices: 3,
   ...extra,
 });
@@ -84,15 +83,6 @@ const dev = (license_id: string, device_hash: string): DeviceRow => ({
   name: device_hash,
   created_at: "2026-10-01T00:00:00Z",
   last_seen_at: "2026-10-01T00:00:00Z",
-});
-
-test("lifetime licenses stay usable without a paid period; subscriptions only while paid", () => {
-  const today = "2026-10-05";
-  assert.equal(usable(lic("a"), today), true);
-  assert.equal(usable(lic("a", { status: "refunded" }), today), false);
-  assert.equal(usable(lic("s", { kind: "site", plan: null }), today), true);
-  assert.equal(usable(lic("m", { kind: "commercial", plan: "monthly", paid_through: "2026-11-04" }), today), true);
-  assert.equal(usable(lic("m", { kind: "commercial", plan: "monthly", paid_through: "2026-09-01" }), today), false);
 });
 
 test("a license has room for a device until max_devices; site licenses always do", () => {
@@ -105,24 +95,52 @@ test("a license has room for a device until max_devices; site licenses always do
 });
 
 test("the license chosen is the one this device is on, else one with room, newest first", () => {
-  const today = "2026-10-05";
   const full = [dev("a", "h1"), dev("a", "h2"), dev("a", "h3")];
   const rows = [lic("a"), lic("b"), lic("gone", { status: "refunded" })];
-  assert.deepEqual(chooseLicense(rows, today, full, "h2"), { license: rows[0], slot: "registered" });
-  assert.deepEqual(chooseLicense(rows, today, full, "h9"), { license: rows[1], slot: "free" });
-  assert.deepEqual(chooseLicense([rows[0]], today, full, "h9"), { license: rows[0], slot: "full" });
-  assert.equal(chooseLicense([rows[2]], today, [], "h9"), null);
-  assert.equal(chooseLicense([], today, [], null), null);
+  assert.deepEqual(chooseLicense(rows, false, full, "h2"), { license: rows[0], slot: "registered" });
+  assert.deepEqual(chooseLicense(rows, false, full, "h9"), { license: rows[1], slot: "free" });
+  assert.deepEqual(chooseLicense([rows[0]], false, full, "h9"), { license: rows[0], slot: "full" });
+  assert.equal(chooseLicense([rows[2]], false, [], "h9"), null);
+  assert.equal(chooseLicense([], false, [], null), null);
+});
+
+test("only active licenses are chosen, of any kind; test orders only where allowed", () => {
+  const site = lic("s", { kind: "site", plan: null });
+  assert.deepEqual(chooseLicense([site], false, [], null), { license: site, slot: "free" });
+  assert.equal(chooseLicense([{ ...site, status: "revoked" }], false, [], null), null);
+  const test = lic("t", { store_test: true });
+  assert.equal(chooseLicense([test], false, [], "h1"), null);
+  assert.deepEqual(chooseLicense([test], true, [], "h1"), { license: test, slot: "free" });
 });
 
 test("licenses are labelled by kind and plan", () => {
   assert.equal(licenseLabel({ kind: "personal", plan: "lifetime" }), "Pro · lifetime");
   assert.equal(licenseLabel({ kind: "site", plan: null }), "Site license");
-  assert.equal(licenseLabel({ kind: "commercial", plan: "yearly" }), "Pro · yearly");
+  assert.equal(licenseLabel({ kind: "commercial", plan: null }), "Pro");
 });
 
 test("after signing in, only paths on this site", () => {
   assert.equal(safeNext("/activate?port=1&state=x"), "/activate?port=1&state=x");
-  for (const bad of ["https://evil.example", "//evil.example", "/\\evil", "", null])
-    assert.equal(safeNext(bad), "/account");
+  assert.equal(safeNext("/admin?status=new&open=x#r-1"), "/admin?status=new&open=x#r-1");
+  assert.equal(safeNext("/a/../account"), "/account");
+  for (const bad of [
+    "https://evil.example",
+    "//evil.example",
+    "/\\evil",
+    "/\\/evil.com",
+    "/\t/evil.com",
+    "/\n/evil.com",
+    "/\r//evil.com",
+    "/\u0000/evil.com",
+    "/.//evil.com",
+    "/%2e//evil.com",
+    "///evil.com",
+    "",
+    null,
+    undefined,
+  ])
+    assert.equal(safeNext(bad), "/account", JSON.stringify(bad));
+  // Whatever comes out stays on this site.
+  for (const ok of ["/account", "/activate?port=1&state=x", "/a//b"])
+    assert.equal(new URL(safeNext(ok), "https://ddugit.com").origin, "https://ddugit.com");
 });
