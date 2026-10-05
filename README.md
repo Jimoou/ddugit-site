@@ -16,8 +16,11 @@ npm run build
 
 ## 라이선스 (Supabase)
 
-- `supabase/migrations/`: `licenses` 테이블. 로그인한 사람은 자기 이메일로 산 라이선스만 읽는다(RLS)
-- `supabase/functions/license-refresh`: 앱이 가진 라이선스를 받아, 구독이 살아 있으면 만료일을 늘려 다시 서명한다. 앱은 `ddugit.com/api/license/refresh`로 부른다(`src/app/api/license/refresh`)
+- 판매: 평생 라이선스 하나(`site.ts`의 `PRO_PRICE`, 한 번 결제, 이후 업데이트 모두 포함), 라이선스당 기기 3대(`licenses.max_devices`). 사이트 라이선스(`kind = 'site'`)는 기기 제한이 없다
+- `supabase/migrations/`: `licenses`, `activations`, `devices` 테이블. 로그인한 사람은 자기 이메일로 산 라이선스와 그 기기만 읽고, 기기는 지울 수만 있다(RLS). 기기 추가는 함수(service role)만, 한도는 트리거(`devices_within_limit`)가 지킨다
+- `supabase/functions/license-activate`: `/activate`가 준 1회용 코드 + 앱의 기기 id → 기기 등록 후 그 기기용으로 서명한 라이선스(`ddugit.com/api/license/activate`)
+- `supabase/functions/license-deactivate`: 앱의 "이 기기 제거". 서명된 라이선스 + 기기 id → 기기 행 삭제(`ddugit.com/api/license/deactivate`)
+- `supabase/functions/license-refresh`: 예전 구독용(만료일 연장). 평생 라이선스는 그대로 돌려준다(`ddugit.com/api/license/refresh`)
 - `supabase/functions/_shared/license.ts`: 라이선스 형식(앱의 `license.rs`와 같음). `npm test`
 - 배포: `main`에 `supabase/`가 바뀌면 `.github/workflows/supabase.yml`이 마이그레이션과 함수를 올린다
 

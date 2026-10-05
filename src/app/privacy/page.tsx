@@ -12,7 +12,8 @@ export default function Privacy() {
       <h2>The app</h2>
       <p>
         ddugit never sends your repositories, commits or files anywhere. It contacts ddugit.com only to check for app
-        updates and, with a subscription license, to renew that license.
+        updates, and when you activate or remove Pro on a device. For that it sends a random id made for this computer;
+        ddugit.com keeps only a hash of it, with the device name you see on your account page.
       </p>
       <h2>This site</h2>
       <p>

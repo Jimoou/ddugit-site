@@ -3,6 +3,8 @@ import Link from "next/link";
 import { hasSupabase } from "@/lib/supabase/config";
 import { supabaseServer } from "@/lib/supabase/server";
 import { AuthSplit } from "@/components/AuthSplit";
+import { Devices } from "@/components/Devices";
+import { licenseLabel } from "@/lib/activate";
 import { signOut } from "./actions";
 
 export const metadata: Metadata = { title: "Account" };
@@ -16,7 +18,7 @@ export default async function Account({ searchParams }: { searchParams: Promise<
       <AuthSplit
         eyebrow="Account"
         title="Sign in to ddugit"
-        lead="Buy and manage ddugit Pro here."
+        lead="Buy ddugit Pro and manage your license and devices here."
         configured={hasSupabase()}
         notice={error && <p className="note">Sign-in didn&apos;t go through. Please try again.</p>}
         aside={
@@ -29,12 +31,17 @@ export default async function Account({ searchParams }: { searchParams: Promise<
   }
 
   const name = (user.user_metadata.full_name ?? user.user_metadata.user_name ?? user.email) as string;
-  const { data: licenses } = await (
-    await supabaseServer()
-  )
-    .from("licenses")
-    .select("id, kind, plan, seats, status, paid_through, text")
-    .order("created_at", { ascending: false });
+  const db = await supabaseServer();
+  const [{ data: licenses }, { data: devices }] = await Promise.all([
+    db
+      .from("licenses")
+      .select("id, kind, plan, seats, status, paid_through, max_devices, text")
+      .order("created_at", { ascending: false }),
+    db
+      .from("devices")
+      .select("license_id, device_hash, name, created_at, last_seen_at")
+      .order("created_at", { ascending: true }),
+  ]);
   return (
     <div className="page prose">
       <p className="eyebrow">Account</p>
@@ -45,26 +52,48 @@ export default async function Account({ searchParams }: { searchParams: Promise<
       </section>
       <h2>Licenses</h2>
       {licenses?.length ? (
-        licenses.map((l) => (
-          <section key={l.id} className="card license">
-            <h3>
-              {l.kind === "site" ? "Site license" : (PLAN[l.plan as string] ?? "Commercial")} · {l.seats}{" "}
-              {l.seats === 1 ? "seat" : "seats"}
-            </h3>
-            <p>
-              {l.paid_through ? `Paid through ${l.paid_through}` : "No end date"} ·{" "}
-              {STATUS[l.status as string] ?? l.status}
-            </p>
-            <p className="muted small">
-              In the app, choose Settings → License → “Activate with your ddugit.com account”. Offline? Paste this text
-              there instead. While the subscription runs, the app renews it by itself.
-            </p>
-            <textarea className="license-text" readOnly rows={3} value={l.text as string} />
-          </section>
-        ))
+        licenses.map((l) => {
+          const mine = (devices ?? []).filter((d) => d.license_id === l.id);
+          const max = (l.max_devices as number | null) ?? 3;
+          return (
+            <section key={l.id} className="card license">
+              {l.kind === "site" ? (
+                <>
+                  <h3>
+                    Site license · {l.seats} {l.seats === 1 ? "seat" : "seats"}
+                  </h3>
+                  <p className="muted small">
+                    In the app, choose Settings → License → “Activate with your ddugit.com account”. Offline? Paste this
+                    text there instead.
+                  </p>
+                  {l.text && <textarea className="license-text" readOnly rows={3} value={l.text as string} />}
+                </>
+              ) : (
+                <>
+                  <h3>
+                    {licenseLabel(l)} · {mine.length} of {max} devices
+                  </h3>
+                  <p>
+                    {l.plan === "lifetime"
+                      ? "Paid once. Every future update included."
+                      : l.paid_through
+                        ? `Paid through ${l.paid_through}`
+                        : "No end date"}
+                    {l.status !== "active" ? ` · ${STATUS[l.status as string] ?? l.status}` : ""}
+                  </p>
+                  <p className="muted small">
+                    In the app, choose Settings → License → “Activate with your ddugit.com account”. Moving to a new
+                    computer? Remove the old one here or in its app first.
+                  </p>
+                  <Devices devices={mine} back="/account" />
+                </>
+              )}
+            </section>
+          );
+        })
       ) : (
         <p>
-          No licenses bought with {user.email} yet. Subscriptions open soon. <Link href="/pricing">See pricing</Link>
+          No licenses bought with {user.email} yet. <Link href="/pricing">See pricing</Link>
         </p>
       )}
       <form action={signOut}>
@@ -74,11 +103,9 @@ export default async function Account({ searchParams }: { searchParams: Promise<
   );
 }
 
-const PLAN: Record<string, string> = { monthly: "Monthly subscription", yearly: "Yearly subscription" };
 const STATUS: Record<string, string> = {
-  active: "Active",
-  on_trial: "Trial",
-  cancelled: "Cancelled (runs to the end of the period)",
+  refunded: "Refunded",
+  cancelled: "Cancelled",
   past_due: "Payment needed",
   expired: "Expired",
 };

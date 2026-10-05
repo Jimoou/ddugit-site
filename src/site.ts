@@ -1,4 +1,4 @@
-// Site-wide facts in one place: the product's name, prices and where the
+// Site-wide facts in one place: the product's name, price and where the
 // download manifest lives (written by the app's release workflow).
 
 export const SITE = {
@@ -8,8 +8,11 @@ export const SITE = {
   contact: "support@ddugit.com",
 };
 
-/** Pro subscription prices in US dollars. Free covers everyday Git for anyone; Pro adds the team features. */
-export const PRICES = { monthly: 5, yearly: 50 };
+/** Pro: one payment in US dollars, used forever with every future update, on up to `DEVICES` devices. */
+export const PRO_PRICE = 29;
+
+/** Devices one Pro license can be activated on at a time. */
+export const DEVICES = 3;
 
 /**
  * `downloads.json` in the public `releases` bucket (Supabase Storage):

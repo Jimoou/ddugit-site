@@ -33,7 +33,9 @@ jobs:
       - if: env.SUPABASE_ACCESS_TOKEN != '' && env.PROJECT_REF != ''
         run: supabase db push
       # The app calls them without a login (the signed license, or the one-time code, is the proof), so no JWT check.
+      # license-refresh only serves the old subscriptions (a lifetime license comes back unchanged).
       - if: env.SUPABASE_ACCESS_TOKEN != '' && env.PROJECT_REF != ''
         run: |
           supabase functions deploy license-refresh --no-verify-jwt --project-ref "$PROJECT_REF"
           supabase functions deploy license-activate --no-verify-jwt --project-ref "$PROJECT_REF"
+          supabase functions deploy license-deactivate --no-verify-jwt --project-ref "$PROJECT_REF"
