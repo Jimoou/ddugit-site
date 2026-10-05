@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { hasSupabase } from "@/lib/supabase/config";
 import { supabaseServer } from "@/lib/supabase/server";
-import { SignInButtons } from "@/components/SignIn";
+import { AuthSplit } from "@/components/AuthSplit";
 import { signOut } from "./actions";
 
 export const metadata: Metadata = { title: "Account" };
@@ -13,13 +13,18 @@ export default async function Account({ searchParams }: { searchParams: Promise<
 
   if (!user) {
     return (
-      <div className="page prose">
-        <p className="eyebrow">Account</p>
-        <h1>Sign in</h1>
-        <p>Buy and manage ddugit Pro here. Downloading and using the app needs no account.</p>
-        {error && <p className="note">Sign-in didn&apos;t go through. Please try again.</p>}
-        {hasSupabase() ? <SignInButtons /> : <p className="muted small">Sign-in opens soon.</p>}
-      </div>
+      <AuthSplit
+        eyebrow="Account"
+        title="Sign in to ddugit"
+        lead="Buy and manage ddugit Pro here."
+        configured={hasSupabase()}
+        notice={error && <p className="note">Sign-in didn&apos;t go through. Please try again.</p>}
+        aside={
+          <>
+            <Link href="/download">Downloading</Link> and using the app needs no account.
+          </>
+        }
+      />
     );
   }
 
