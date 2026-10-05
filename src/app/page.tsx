@@ -1,102 +1,178 @@
 import Link from "next/link";
+import { Icon, type IconName } from "@/components/Icon";
 import { Screen } from "@/components/Screen";
 import { SITE } from "@/site";
 
-const FEATURES = [
+type Feature = { icon: IconName; name: string; body: string };
+
+const FEATURES: Feature[] = [
   {
-    name: "Graph first",
-    body: "History is a map you can pan, zoom and rotate. Each branch keeps its lane and color, so even a large repository reads at a glance.",
+    icon: "graph",
+    name: "A graph you can move around",
+    body: "Pan, zoom and rotate your history. Each branch keeps its lane and color, so large repositories stay readable.",
   },
   {
+    icon: "merge",
     name: "Drag to merge",
-    body: "Drop a branch on another to merge, rebase or cherry-pick. Shift-drag a commit to reorder it.",
+    body: "Drop one branch on another to merge, rebase or cherry-pick. Shift-drag a commit to move it.",
   },
   {
-    name: "Tidy commits from a list",
-    body: "Interactive rebase without an editor: reorder, squash, fixup and drop in a sheet. Histories with merges work too.",
+    icon: "list",
+    name: "Interactive rebase from a list",
+    body: "Reorder, squash, fixup and drop commits in a sheet. Histories with merge commits work too.",
   },
   {
-    name: "Backport tracker (Pro)",
-    body: "See which fixes one branch has and another lacks, cherry-pick them in order, or export patches for places you can't push to.",
+    icon: "conflict",
+    name: "Conflicts, file by file",
+    body: "Take ours, take theirs or edit the result. Abort at any point to get back where you started.",
   },
   {
-    name: "All your repositories (Pro)",
-    body: "One dashboard for every repository: current branch, ahead/behind, local changes and paused work, without opening each one.",
+    icon: "undo",
+    name: "Undo and reflog",
+    body: "Reset to any earlier state. Commits no branch reaches any more are marked, so they are easy to recover.",
   },
   {
-    name: "Stacked branches (Pro)",
-    body: "Build small branches on top of each other, one pull request each. When the bottom changes, restack the whole stack in one go.",
-  },
-  {
-    name: "Air-gapped transfer (Pro)",
-    body: "Carry code into closed networks as bundle files holding only what each site is missing, with checksums, and track what went where.",
-  },
-  {
-    name: "Worktrees, submodules, LFS",
-    body: "The tools large projects need live in the sidebar, next to your branches and pull requests.",
+    icon: "pull",
+    name: "Pull requests on the graph",
+    body: "Open GitHub and GitLab pull requests show up as labels on their branches and in the sidebar.",
   },
 ];
+
+const ALSO = ["Stash", "Worktrees", "Submodules", "Git LFS", "File history and blame", "Bisect", "Branch cleanup"];
+
+const PRO: Feature[] = [
+  {
+    icon: "backport",
+    name: "Backport tracker",
+    body: "See which fixes a branch is missing. Cherry-pick them in order, or export patches where you can't push.",
+  },
+  {
+    icon: "stack",
+    name: "Stacked branches",
+    body: "Build small branches on top of each other, one pull request each. Restack them all when the bottom changes.",
+  },
+  {
+    icon: "dashboard",
+    name: "Every repository at a glance",
+    body: "Branch, ahead/behind and local changes for all your repositories. Pull or switch branches across many at once.",
+  },
+  {
+    icon: "notes",
+    name: "Release notes",
+    body: "Markdown notes between two tags, grouped by change type and linked to their pull requests.",
+  },
+  {
+    icon: "transfer",
+    name: "Air-gapped transfer",
+    body: "Move code into closed networks as Git bundles that hold only what each site is missing, with checksums.",
+  },
+  {
+    icon: "server",
+    name: "Private and self-hosted PRs",
+    body: "Pull requests from private repositories and from your company's own GitHub or GitLab server.",
+  },
+];
+
+function Features({ items }: { items: Feature[] }) {
+  return (
+    <div className="features">
+      {items.map((f) => (
+        <article key={f.name} className="feature">
+          <Icon name={f.icon} />
+          <h3>{f.name}</h3>
+          <p>{f.body}</p>
+        </article>
+      ))}
+    </div>
+  );
+}
 
 export default function Home() {
   return (
     <>
       <section className="hero">
-        <p className="eyebrow">Git client · macOS · Windows</p>
+        <p className="pill">Git client for macOS and Windows</p>
         <h1>{SITE.tagline}</h1>
         <p className="lead">
-          ddugit puts the commit graph at the center of your Git work. Free for everyday Git, with a 14-day Pro trial
-          built in.
+          ddugit puts the commit graph at the center of your work. Merge, rebase and cherry-pick by dragging, and see
+          the result right where it lands.
         </p>
         <div className="actions">
-          <Link href="/download" className="button primary">
-            Download
+          <Link href="/download" className="button primary large">
+            Download for free
           </Link>
-          <Link href="/pricing" className="button">
-            Pricing
+          <Link href="/pricing" className="button large">
+            See pricing
           </Link>
         </div>
+        <p className="hero-note">Free for everyday Git · 14-day Pro trial, no sign-up</p>
       </section>
 
-      <Screen
-        name="graph"
-        alt="ddugit showing a repository's commit graph, branches in the sidebar and a commit's details"
-        priority
-      />
+      <div className="hero-shot">
+        <Screen
+          name="graph"
+          alt="ddugit showing a repository's commit graph, branches in the sidebar and a commit's details"
+          priority
+        />
+      </div>
 
-      <section className="grid">
-        {FEATURES.map((f) => (
-          <article key={f.name} className="card">
-            <p className="eyebrow">{f.name}</p>
-            <p>{f.body}</p>
-          </article>
-        ))}
+      <section id="features" className="section">
+        <header className="section-head">
+          <p className="eyebrow">Features</p>
+          <h2>Everyday Git, done on the graph</h2>
+          <p>All of this is free, for any repository.</p>
+        </header>
+        <Features items={FEATURES} />
+        <p className="also">
+          <span className="also-label">Also included</span>
+          {ALSO.map((a) => (
+            <span key={a} className="tag">
+              {a}
+            </span>
+          ))}
+        </p>
       </section>
 
-      <section className="showcase">
+      <section className="section split">
         <div>
           <p className="eyebrow">Interactive rebase</p>
-          <h2>Tidy history without a text editor</h2>
+          <h2>Clean up history without a text editor</h2>
           <p className="muted">
-            Drag rows to reorder, pick fixup or squash, and apply. Conflicts open in their own sheet and you can cancel
-            any time.
+            Drag rows to reorder, choose fixup or squash, then apply. If a step conflicts, it opens in its own sheet.
+            You can cancel at any time.
           </p>
         </div>
         <Screen name="rebase" alt="The tidy commits sheet with three commits being reordered and folded" />
       </section>
 
-      <section className="showcase">
-        <div>
-          <p className="eyebrow">Backports</p>
-          <h2>Know what each branch is missing</h2>
-          <p className="muted">
-            Compare an upstream with a customer branch, cherry-pick the fixes it lacks, and mark the ones it never
-            needs.
+      <section className="section">
+        <header className="section-head">
+          <p className="eyebrow">ddugit Pro</p>
+          <h2>For teams that ship from more than one branch</h2>
+          <p>
+            Backports, stacks, release notes and transfers into closed networks. Everything in Free is included, and
+            every install starts with 14 days of Pro.
           </p>
-        </div>
+        </header>
         <Screen name="backport" alt="The backport sheet listing commits missing from a branch" />
+        <Features items={PRO} />
+        <p className="section-link">
+          <Link href="/pricing">Compare Free and Pro →</Link>
+        </p>
       </section>
 
-      <p className="muted small center">No sign-up to download or use. An account is only for buying Pro.</p>
+      <section className="cta">
+        <h2>Open your repository in ddugit</h2>
+        <p>No account needed to download or use it. Pro features are on for the first 14 days.</p>
+        <div className="actions">
+          <Link href="/download" className="button primary large">
+            Download for free
+          </Link>
+          <Link href="/pricing" className="button large">
+            See pricing
+          </Link>
+        </div>
+      </section>
     </>
   );
 }
