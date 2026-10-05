@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { type Kind as ReportKind, LIMITS } from "@shared/report.ts";
 
-export type ReportKind = "bug" | "question";
+export type { ReportKind };
 
 const KINDS: { value: ReportKind; label: string; hint: string }[] = [
   { value: "bug", label: "Problem", hint: "Something in ddugit or on this site doesn't work" },
@@ -90,7 +91,7 @@ export function ReportForm({
           name="message"
           required
           rows={8}
-          maxLength={5000}
+          maxLength={LIMITS.message}
           defaultValue={initialMessage}
           placeholder={
             kind === "bug"
@@ -109,7 +110,7 @@ export function ReportForm({
           id="report-email"
           name="email"
           type="email"
-          maxLength={254}
+          maxLength={LIMITS.email}
           autoComplete="email"
           required={kind === "question"}
         />

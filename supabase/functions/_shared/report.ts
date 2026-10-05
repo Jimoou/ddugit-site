@@ -9,6 +9,7 @@
 // the rate limit) believed. Called directly, the function answers 403.
 
 import { isReplyEmail } from "./email.ts";
+import { sha256Hex } from "./license.ts";
 
 export const KINDS = ["bug", "question"] as const;
 export const SOURCES = ["app", "web"] as const;
@@ -130,11 +131,7 @@ export function senderIp(headers: { get(name: string): string | null }): string 
 }
 
 /** SHA-256 (hex) of `salt:ip`: what is kept instead of the IP, for rate limiting only. */
-export async function senderHash(salt: string, ip: string | null): Promise<string> {
-  const data = new TextEncoder().encode(`${salt}:${ip ?? "unknown"}`);
-  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", data));
-  return [...digest].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
+export const senderHash = (salt: string, ip: string | null): Promise<string> => sha256Hex(`${salt}:${ip ?? "unknown"}`);
 
 /**
  * Whether one more report may be stored, given how many this sender and everyone
