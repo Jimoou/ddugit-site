@@ -3,12 +3,12 @@
 
 export const SITE = {
   name: "ddugit",
-  tagline: "See your Git history as a graph, and work right on it.",
+  tagline: "Your Git history, as a graph you can work on.",
   url: "https://ddugit.com",
   contact: "support@ddugit.com",
 };
 
-/** Subscription for work use (2026-10-04 decision). Personal, student and open-source use is free. */
+/** Pro subscription prices in US dollars. Free covers everyday Git for anyone; Pro adds the team features. */
 export const PRICES = { monthly: 5, yearly: 50 };
 
 /**
