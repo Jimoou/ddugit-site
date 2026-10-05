@@ -9,3 +9,7 @@ verify_jwt = false
 
 [functions.license-deactivate]
 verify_jwt = false
+
+# Lemon Squeezy's webhook: signed with X-Signature, no Supabase JWT.
+[functions.ls-webhook]
+verify_jwt = false

@@ -35,7 +35,7 @@ export default async function Account({ searchParams }: { searchParams: Promise<
   const [{ data: licenses }, { data: devices }] = await Promise.all([
     db
       .from("licenses")
-      .select("id, kind, plan, seats, status, paid_through, max_devices, text")
+      .select("id, kind, plan, seats, status, paid_through, max_devices, text, store_test")
       .order("created_at", { ascending: false }),
     db
       .from("devices")
@@ -80,6 +80,7 @@ export default async function Account({ searchParams }: { searchParams: Promise<
                         ? `Paid through ${l.paid_through}`
                         : "No end date"}
                     {l.status !== "active" ? ` · ${STATUS[l.status as string] ?? l.status}` : ""}
+                    {l.store_test ? " · Test order" : ""}
                   </p>
                   <p className="muted small">
                     In the app, choose Settings → License → “Activate with your ddugit.com account”. Moving to a new
