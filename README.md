@@ -38,3 +38,19 @@ npm run build
    6. 테스트 모드로 한 번 사 본다: 계정 페이지에 "Test order"로 보이면 끝. 지우기는 `delete from public.licenses where store_test;`
 
 구매 흐름: 가격 페이지 → `/checkout`(로그인 안 했으면 로그인 후 돌아옴) → Lemon Squeezy 체크아웃(`checkout[email]`·`checkout[custom][email]`에 로그인 이메일) → 웹훅이 그 이메일로 라이선스 행을 만든다 → `/thanks` → 앱의 설정 → License → "Sign in with ddugit.com". 결제 이메일을 바꿔도 라이선스는 로그인 이메일(`custom_data.email`)로 간다
+
+## 문제 신고·문의 (Supabase)
+
+앱과 사이트(`/contact`)는 이메일 대신 HTTPS로 보낸다: `POST ddugit.com/api/report` → Next 라우트(`src/app/api/report`)가 방문자 IP를 헤더(`x-ddugit-client-ip`, `x-forwarded-for`)에 실어 `report` 함수로 넘긴다.
+
+- 요청: `{ kind: "bug"|"question", message(1..5000), email?(≤254), diagnostics?(≤20000), source: "app"|"web", appVersion?(≤32), os?(≤64), website?(허니팟) }` → `200 { ok, id }` | `400 { error }` | `413`(64KB 초과) | `429 { error: "Too many reports. Try again later." }` | `5xx`
+- `supabase/functions/report`: 검사(순수 로직 `_shared/report.ts`, `npm test`), 허니팟이 차 있으면 저장 없이 200, 보낸 사람(= `REPORT_SALT`와 IP의 SHA-256)당 시간당 5건 + 전체 시간당 200건. IP 자체와 내용(메시지·이메일)은 저장·로그하지 않는다(해시만 `reports.sender_hash`)
+- `reports` 테이블: 함수(service role)만 넣는다. 관리자(`admins`의 이메일, 대소문자 무시)만 읽고, `status`(new/read/done)·`note`만 고칠 수 있다(RLS + 열 단위 권한). API로는 아무도 지울 수 없다
+- `/admin`: 관리자만(그 밖에는 404). 상태·종류·출처 필터, 상태별 개수, 펼치면 메시지·답장 메일 링크·버전·OS·진단 정보, 상태 바꾸기와 비공개 메모. 계정 페이지에 관리자에게만 링크가 보인다
+
+한 번 설정:
+
+1. Supabase → Edge Functions → Secrets: `REPORT_SALT` = 임의의 긴 값(예: `openssl rand -hex 32`). 없으면 함수가 503을 돌려준다. 바꾸면 그때부터 속도 제한이 새로 센다
+2. 마이그레이션과 함수는 `main`에 머지되면 Supabase workflow가 올린다(`20261007000000_reports.sql`, `report` 함수). 소유자(`kfromh0136@gmail.com`)는 마이그레이션이 관리자로 넣는다
+3. 관리자 추가: Supabase → SQL Editor에서 `insert into public.admins (email) values ('someone@example.com');`(그 사람이 ddugit.com에 로그인하는 GitHub·Google 계정의 이메일). 빼기는 `delete from public.admins where email = '…';`
+4. 오래된 신고 지우기(필요할 때): `delete from public.reports where status = 'done' and created_at < now() - interval '1 year';`

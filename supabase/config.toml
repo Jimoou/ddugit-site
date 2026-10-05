@@ -13,3 +13,7 @@ verify_jwt = false
 # Lemon Squeezy's webhook: signed with X-Signature, no Supabase JWT.
 [functions.ls-webhook]
 verify_jwt = false
+
+# Problem reports and inquiries from the app and /contact (through ddugit.com/api/report): no login.
+[functions.report]
+verify_jwt = false

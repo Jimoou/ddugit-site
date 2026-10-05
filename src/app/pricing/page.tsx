@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CHECKOUT_URL, DEVICES, PRO_PRICE, SITE, usd } from "@/site";
+import { CHECKOUT_URL, DEVICES, PRO_PRICE, usd } from "@/site";
 
 export const metadata: Metadata = { title: "Pricing" };
 
@@ -152,9 +152,9 @@ export default function Pricing() {
           <h2>Site license</h2>
           <p className="price">Custom</p>
           <p className="plan-desc">Pro for an entire organization, online or offline.</p>
-          <a className="button" href={`mailto:${SITE.contact}?subject=ddugit%20site%20license`}>
+          <Link className="button" href="/contact?topic=site-license">
             Contact us
-          </a>
+          </Link>
           <Lines items={["Everything in Pro", "Seats for the whole organization", "Works fully offline"]} />
         </article>
       </section>
@@ -218,7 +218,7 @@ export default function Pricing() {
           ))}
         </dl>
         <p className="center muted">
-          Something else? Write to <a href={`mailto:${SITE.contact}`}>{SITE.contact}</a>.
+          Something else? <Link href="/contact?topic=question">Ask us</Link>.
         </p>
       </section>
     </div>
