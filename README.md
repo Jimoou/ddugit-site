@@ -43,7 +43,8 @@ npm run build
 ## 라이선스 (Supabase)
 
 - 판매: 평생 라이선스 하나(`site.ts`의 `PRO_PRICE`, 한 번 결제, 이후 업데이트 모두 포함), 라이선스당 기기 3대(`licenses.max_devices`). 사이트 라이선스(`kind = 'site'`)는 기기 제한이 없다
-- `supabase/migrations/`: `licenses`, `activations`, `devices` 테이블. 로그인한 사람은 자기 이메일로 산 라이선스와 그 기기만 읽고, 기기는 지울 수만 있다(RLS). 기기 추가는 함수(service role)만, 한도는 트리거(`devices_within_limit`)가 지킨다
+- `supabase/migrations/`: `licenses`, `activations`, `devices` 테이블. 로그인한 사람은 자기 이메일로 산 라이선스와 그 기기만 읽고, 기기는 지울 수만 있다(RLS). 기기 추가는 함수(service role)만, 한도는 트리거(`devices_within_limit`)가 지킨다. API 역할의 권한은 사이트가 쓰는 것만 남긴다(`20261008000000_license_grants.sql`: authenticated는 licenses select, devices select·delete, activations의 네 열 insert만, anon은 없음)
+- 새 마이그레이션 이름은 이미 적용된 것보다 뒤여야 한다(`supabase db push`가 앞선 것을 거부한다). 지금 마지막은 `20261008000000`이므로 실제 날짜가 그보다 앞이면 그 뒤 번호를 손으로 붙인다
 - `supabase/functions/license-activate`: `/activate`가 준 1회용 코드 + 앱의 기기 id → 라이선스가 쓸 수 있는지 먼저 확인(아래 규칙) → 기기 등록 후 그 기기용으로 서명한 라이선스(`ddugit.com/api/license/activate`)
 - `supabase/functions/license-deactivate`: 앱의 "이 기기 제거". 서명된 라이선스 + 기기 id → 기기 행 삭제(`ddugit.com/api/license/deactivate`)
 - `supabase/functions/license-refresh`: 앱이 시작할 때·하루마다 갖고 있는 라이선스를 확인한다(`ddugit.com/api/license/refresh`). 쓸 수 있으면 그대로(사이트 라이선스는 저장된 최신 텍스트), 못 쓰면 `expired`, 기기에 묶인 라이선스의 행이 없거나 그 기기가 지워졌으면 `removed`(앱이 Pro를 끈다), 기기에 안 묶인 라이선스의 행이 없으면 `unknown`
