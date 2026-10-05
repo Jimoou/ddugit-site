@@ -6,7 +6,7 @@ export interface LicenseInfo {
   id: string;
   name: string;
   email: string;
-  /** `commercial` (per seat) or `site` (a whole organisation, e.g. air-gapped). */
+  /** `personal` (lifetime, bought online), `commercial` (per seat) or `site` (a whole organisation, e.g. air-gapped). */
   kind: string;
   seats: number;
   /** YYYY-MM-DD */
@@ -15,8 +15,10 @@ export interface LicenseInfo {
   updatesUntil: string;
   /** Subscriptions: paid through + grace (YYYY-MM-DD). The app only reminds after it. */
   expires?: string;
-  /** `monthly` / `yearly` subscription; absent for a site license. */
+  /** `lifetime`, or a `monthly` / `yearly` subscription; absent for a site license. */
   plan?: string;
+  /** SHA-256 (hex) of the one device id this license works on; absent = not tied to a device (site licenses). */
+  device?: string;
 }
 
 const PREFIX = "DDUGIT1.";
@@ -81,19 +83,56 @@ export function renewed(info: LicenseInfo, paidThrough: string, today: string): 
   return { ...info, issued: today, expires, updatesUntil: expires };
 }
 
+/** "Updates until" of a lifetime license: every future version. */
+export const LIFETIME_UPDATES = "9999-12-31";
+
+/** The app's device id: 32 random bytes, base64url without padding. */
+export const DEVICE_ID = /^[A-Za-z0-9_-]{43}$/;
+
+/** SHA-256 of a string (UTF-8), lowercase hex: how codes and device ids are kept. */
+export async function sha256Hex(s: string): Promise<string> {
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)));
+  return [...digest].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 /** A `licenses` row, as the functions read it. */
 export interface LicenseRow {
   id: string;
   name: string;
   email: string;
+  kind?: string;
+  /** `lifetime`, `monthly`, `yearly`, or null for a site license. */
+  plan?: string | null;
+  status?: string;
   seats: number;
+  max_devices?: number;
   paid_through: string | null;
-  text: string;
+  /** The stored text; site licenses and subscriptions only (a lifetime license is signed per device). */
+  text: string | null;
+}
+
+/** Site licenses work anywhere; every other license is tied to the devices it is activated on. */
+export const deviceBound = (row: Pick<LicenseRow, "kind">) => row.kind !== "site";
+
+/** A lifetime license for one device: every update, no expiry. */
+export function lifetimeLicense(row: LicenseRow, today: string, device: string): LicenseInfo {
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    kind: "personal",
+    seats: 1,
+    issued: today,
+    updatesUntil: LIFETIME_UPDATES,
+    plan: "lifetime",
+    device,
+  };
 }
 
 /**
- * The license text a row grants today: a site license as it is; a subscription
- * paid through today or later, renewed through its period; null once it has lapsed.
+ * The license text a row grants today: a site license as it is; a lifetime license
+ * signed for `device` (while the purchase stands); a subscription paid through today
+ * or later, renewed through its period; null otherwise.
  * `fallback` stands in when the stored text can't be read (it shouldn't happen).
  */
 export async function currentText(
@@ -101,11 +140,60 @@ export async function currentText(
   today: string,
   keys: { sign: CryptoKey; verify: CryptoKey },
   fallback?: LicenseInfo,
+  device?: string,
 ): Promise<string | null> {
+  if (row.plan === "lifetime") {
+    const bound = device ?? fallback?.device;
+    if ((row.status ?? "active") !== "active" || !bound) return null;
+    return signLicense(keys.sign, lifetimeLicense(row, today, bound));
+  }
   if (!row.paid_through) return row.text;
   if (row.paid_through < today) return null;
-  const current = (await readLicense(keys.verify, row.text)) ?? fallback;
+  const current = (row.text ? await readLicense(keys.verify, row.text) : null) ?? fallback;
   if (!current) return null;
   const info = { ...current, seats: row.seats, name: row.name, email: row.email };
+  if (device) info.device = device;
   return signLicense(keys.sign, renewed(info, row.paid_through, today));
+}
+
+/** Room for a device on a license with `registered` device hashes. */
+export type DeviceSlot = "registered" | "free" | "full";
+
+export function deviceSlot(registered: string[], hash: string, max: number): DeviceSlot {
+  if (registered.includes(hash)) return "registered";
+  return registered.length < max ? "free" : "full";
+}
+
+/** The answer when a license has no room for another device (the app shows it as is). */
+export const fullMessage = (max: number) =>
+  `This license is already on ${max} devices. Remove one at ddugit.com/account.`;
+
+/** An error answer: HTTP status and a short sentence for the app. */
+export interface Refusal {
+  status: number;
+  error: string;
+}
+
+/**
+ * Whether the app trading a code is the computer the code was issued for.
+ * `expected`: the activation's device hash; `presented`: the hash of the device id the app sent.
+ */
+export function checkActivationDevice(
+  siteLicense: boolean,
+  expected: string | null,
+  presented: string | null,
+): Refusal | null {
+  if (siteLicense) return null;
+  if (!expected) return { status: 400, error: "Update ddugit to activate this license." };
+  if (presented !== expected)
+    return { status: 403, error: "This sign-in was started on another computer. Try again from the app." };
+  return null;
+}
+
+/** Whether `held` (a verified license) may release the device whose id hashes to `presented`. */
+export function checkDeactivation(held: LicenseInfo | null, presented: string | null): Refusal | null {
+  if (!held) return { status: 400, error: "This is not a ddugit license." };
+  if (!held.device) return { status: 400, error: "This license isn't tied to a device." };
+  if (presented !== held.device) return { status: 403, error: "This license belongs to another computer." };
+  return null;
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SITE } from "@/site";
+import { DEVICES, SITE } from "@/site";
 
 export const metadata: Metadata = { title: "Terms" };
 
@@ -12,14 +12,13 @@ export default function Terms() {
       <h2>1. Free and Pro</h2>
       <p>
         ddugit Free can be used by anyone, for any purpose. ddugit Pro adds the features listed on the pricing page and
-        needs a Pro subscription per user, or a site license for an organization. Every new install includes a 14-day
-        Pro trial.
+        needs a Pro license per person, or a site license for an organization.
       </p>
-      <h2>2. Subscriptions and cancelling</h2>
+      <h2>2. Lifetime license and devices</h2>
       <p>
-        Pro is a monthly or yearly subscription. If you cancel, Pro stays on until the end of the paid period and you
-        are not charged again. When a subscription ends, Pro features lock; nothing you made with ddugit is changed or
-        removed.
+        A Pro license is a single payment. It does not expire and covers every future version of ddugit. One license can
+        be active on up to {DEVICES} devices at a time; to use it on another one, first remove a device in the app or on
+        your account page.
       </p>
       <h2>3. Refunds</h2>
       <p>Ask within 7 days of payment for a full refund.</p>

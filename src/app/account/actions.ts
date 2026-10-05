@@ -26,3 +26,12 @@ export async function signOut() {
   await (await supabaseServer()).auth.signOut();
   redirect("/account");
 }
+
+/**
+ * Take a device off one of the signed-in user's licenses, then go back to `back`
+ * (a path on this site). The database only lets owners remove their own devices (RLS).
+ */
+export async function removeDevice(licenseId: string, deviceHash: string, back: string) {
+  await (await supabaseServer()).from("devices").delete().eq("license_id", licenseId).eq("device_hash", deviceHash);
+  redirect(safeNext(back));
+}

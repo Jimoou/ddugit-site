@@ -1,11 +1,29 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { activationTarget, callbackUrl, safeNext, usableLicense } from "./activate.ts";
+import {
+  type DeviceRow,
+  activatePath,
+  activationTarget,
+  callbackUrl,
+  chooseLicense,
+  deviceName,
+  deviceSlot,
+  licenseLabel,
+  safeNext,
+  sha256Hex,
+  usable,
+} from "./activate.ts";
 
 const STATE = "abcDEF0123456789_-xyz";
+const DEVICE = "A".repeat(42) + "_";
 
 test("only a loopback port and a token-like state are accepted", () => {
-  assert.deepEqual(activationTarget("53682", STATE), { port: 53682, state: STATE });
+  assert.deepEqual(activationTarget("53682", STATE), {
+    port: 53682,
+    state: STATE,
+    device: null,
+    name: "This computer",
+  });
   for (const port of ["80", "70000", "1e4", "", undefined, "53682&x=1"])
     assert.equal(activationTarget(port, STATE), null);
   for (const state of ["short", "has space here!!", undefined, "a".repeat(129)])
@@ -16,11 +34,91 @@ test("only a loopback port and a token-like state are accepted", () => {
   );
 });
 
-test("a site license or a subscription still paid for is used", () => {
-  const sub = (id: string, paid_through: string | null) => ({ id, kind: "commercial", status: "active", paid_through });
-  assert.equal(usableLicense([sub("old", "2026-09-01"), sub("new", "2026-11-04")], "2026-10-05")?.id, "new");
-  assert.equal(usableLicense([sub("site", null)], "2026-10-05")?.id, "site");
-  assert.equal(usableLicense([sub("old", "2026-09-01")], "2026-10-05"), null);
+test("a device id is 32 bytes of base64url, and its name is cleaned up", () => {
+  assert.deepEqual(activationTarget("53682", STATE, DEVICE, "Mina's MacBook"), {
+    port: 53682,
+    state: STATE,
+    device: DEVICE,
+    name: "Mina's MacBook",
+  });
+  for (const device of ["", "A".repeat(42), "A".repeat(44), "A".repeat(42) + "=", "A".repeat(42) + "+", ["x"]])
+    assert.equal(activationTarget("53682", STATE, device), null);
+  assert.equal(deviceName("  work\u0000pc\n "), "work pc");
+  assert.equal(deviceName("x".repeat(80)), "x".repeat(64));
+  assert.equal(deviceName("한".repeat(70)).length, 64);
+  assert.equal(deviceName(undefined), "This computer");
+  assert.equal(deviceName(" \t "), "This computer");
+});
+
+test("the activation page comes back with everything the app sent", () => {
+  const t = activationTarget("53682", STATE, DEVICE, "Mina & Co's PC")!;
+  const back = new URL(activatePath(t), "https://ddugit.com");
+  assert.equal(back.pathname, "/activate");
+  assert.equal(back.searchParams.get("device"), DEVICE);
+  assert.equal(back.searchParams.get("name"), "Mina & Co's PC");
+  assert.deepEqual(
+    activationTarget(
+      ...(["port", "state", "device", "name"].map((k) => back.searchParams.get(k)) as [string, string, string, string]),
+    ),
+    t,
+  );
+  assert.equal(activatePath(activationTarget("53682", STATE)!), `/activate?port=53682&state=${STATE}`);
+});
+
+test("device ids are kept as the SHA-256 hex of their text", () => {
+  assert.equal(sha256Hex("abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+});
+
+const lic = (id: string, extra: Partial<Parameters<typeof usable>[0]> = {}) => ({
+  id,
+  kind: "personal",
+  plan: "lifetime",
+  status: "active",
+  paid_through: null,
+  max_devices: 3,
+  ...extra,
+});
+const dev = (license_id: string, device_hash: string): DeviceRow => ({
+  license_id,
+  device_hash,
+  name: device_hash,
+  created_at: "2026-10-01T00:00:00Z",
+  last_seen_at: "2026-10-01T00:00:00Z",
+});
+
+test("lifetime licenses stay usable without a paid period; subscriptions only while paid", () => {
+  const today = "2026-10-05";
+  assert.equal(usable(lic("a"), today), true);
+  assert.equal(usable(lic("a", { status: "refunded" }), today), false);
+  assert.equal(usable(lic("s", { kind: "site", plan: null }), today), true);
+  assert.equal(usable(lic("m", { kind: "commercial", plan: "monthly", paid_through: "2026-11-04" }), today), true);
+  assert.equal(usable(lic("m", { kind: "commercial", plan: "monthly", paid_through: "2026-09-01" }), today), false);
+});
+
+test("a license has room for a device until max_devices; site licenses always do", () => {
+  const devices = [dev("a", "h1"), dev("a", "h2"), dev("a", "h3"), dev("b", "h4")];
+  assert.equal(deviceSlot(lic("a"), devices, "h2"), "registered");
+  assert.equal(deviceSlot(lic("a"), devices, "h9"), "full");
+  assert.equal(deviceSlot(lic("a", { max_devices: 4 }), devices, "h9"), "free");
+  assert.equal(deviceSlot(lic("b"), devices, "h9"), "free");
+  assert.equal(deviceSlot(lic("s", { kind: "site", plan: null }), devices, "h9"), "free");
+});
+
+test("the license chosen is the one this device is on, else one with room, newest first", () => {
+  const today = "2026-10-05";
+  const full = [dev("a", "h1"), dev("a", "h2"), dev("a", "h3")];
+  const rows = [lic("a"), lic("b"), lic("gone", { status: "refunded" })];
+  assert.deepEqual(chooseLicense(rows, today, full, "h2"), { license: rows[0], slot: "registered" });
+  assert.deepEqual(chooseLicense(rows, today, full, "h9"), { license: rows[1], slot: "free" });
+  assert.deepEqual(chooseLicense([rows[0]], today, full, "h9"), { license: rows[0], slot: "full" });
+  assert.equal(chooseLicense([rows[2]], today, [], "h9"), null);
+  assert.equal(chooseLicense([], today, [], null), null);
+});
+
+test("licenses are labelled by kind and plan", () => {
+  assert.equal(licenseLabel({ kind: "personal", plan: "lifetime" }), "Pro · lifetime");
+  assert.equal(licenseLabel({ kind: "site", plan: null }), "Site license");
+  assert.equal(licenseLabel({ kind: "commercial", plan: "yearly" }), "Pro · yearly");
 });
 
 test("after signing in, only paths on this site", () => {

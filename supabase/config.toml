@@ -3,3 +3,9 @@ project_id = "ddugit"
 
 [functions.license-refresh]
 verify_jwt = false
+
+[functions.license-activate]
+verify_jwt = false
+
+[functions.license-deactivate]
+verify_jwt = false

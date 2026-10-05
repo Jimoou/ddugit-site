@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PRICES, SITE, usd } from "@/site";
+import { DEVICES, PRO_PRICE, SITE, usd } from "@/site";
 
 export const metadata: Metadata = { title: "Pricing" };
 
@@ -41,24 +41,28 @@ const PRO_LINES = [
 
 const FAQ = [
   {
-    q: "How does the trial work?",
-    a: "Every new install runs with Pro on for 14 days. No account, no card. When the trial ends, the app moves to Free by itself.",
+    q: "Is it really a one-time payment?",
+    a: `Yes. You pay ${usd(PRO_PRICE)} once and keep Pro for good, including every future update. There is no subscription and nothing to renew.`,
+  },
+  {
+    q: "What counts as a device?",
+    a: `Each computer you activate Pro on, whether macOS or Windows. One license works on up to ${DEVICES} of them at a time. Reinstalling ddugit on the same computer doesn't use another.`,
+  },
+  {
+    q: "How do I move Pro to a new computer?",
+    a: "Remove a computer you no longer use, either in its app (Settings → License → Remove this device) or on your account page on ddugit.com. Then activate Pro on the new one.",
   },
   {
     q: "Do I need an account?",
     a: "Not to download or use ddugit. An account on ddugit.com is only for buying Pro and turning it on in the app.",
   },
   {
-    q: "What happens if I cancel?",
-    a: "Pro stays on until the end of the period you paid for. After that, Pro features lock. Your repositories and settings stay as they are.",
-  },
-  {
     q: "Does it work offline or in an air-gapped network?",
-    a: "Licenses are verified on your computer, so ddugit works offline. A subscription renews itself online once a period. For a network with no internet access at all, a site license works fully offline: paste it into Settings → License.",
+    a: "Your license is verified on your computer, so once Pro is on, ddugit works offline. For a network with no internet access at all, ask us about a site license: it works fully offline once pasted into Settings → License.",
   },
   {
-    q: "Is Pro per user?",
-    a: "Yes, one subscription per person. For a larger team or an entire organization, a site license is usually simpler.",
+    q: "Is Pro per person?",
+    a: `Yes, one license per person, on up to ${DEVICES} of their devices. For a larger team or an entire organization, a site license is usually simpler.`,
   },
   {
     q: "Are taxes included?",
@@ -99,7 +103,7 @@ export default function Pricing() {
         <p className="eyebrow">Pricing</p>
         <h1>Free for everyday Git. Pro for teams.</h1>
         <p className="lead">
-          Every new install includes a 14-day Pro trial. No sign-up and no card. When it ends, only Pro features lock.
+          Free has no time limit. Pro is a single payment: use it forever, with every future update included.
         </p>
       </header>
 
@@ -125,26 +129,14 @@ export default function Pricing() {
           />
         </article>
         <article className="plan featured">
-          <h2>Pro monthly</h2>
-          <p className="price">
-            {usd(PRICES.monthly)}
-            <span className="per">per month</span>
-          </p>
-          <p className="plan-desc">One user, billed monthly. Cancel any time.</p>
-          <span className="button primary" aria-disabled="true">
-            Available soon
-          </span>
-          <Lines items={PRO_LINES} />
-        </article>
-        <article className="plan featured">
           <h2>
-            Pro yearly <span className="badge">2 months free</span>
+            Pro <span className="badge">Lifetime</span>
           </h2>
           <p className="price">
-            {usd(PRICES.yearly)}
-            <span className="per">per year</span>
+            {usd(PRO_PRICE)}
+            <span className="per">one-time</span>
           </p>
-          <p className="plan-desc">One user, billed once a year.</p>
+          <p className="plan-desc">Use forever · all future updates included · up to {DEVICES} devices.</p>
           <span className="button primary" aria-disabled="true">
             Available soon
           </span>
@@ -160,9 +152,7 @@ export default function Pricing() {
           <Lines items={["Everything in Pro", "Seats for the whole organization", "Works fully offline"]} />
         </article>
       </section>
-      <p className="plans-note">
-        Checkout opens once our store is verified. Until then, the 14-day trial gives you every Pro feature.
-      </p>
+      <p className="plans-note">Checkout opens once our store is verified. Pay once, no subscription.</p>
 
       <section className="section narrow" aria-labelledby="compare">
         <h2 id="compare" className="center">

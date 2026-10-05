@@ -11,8 +11,8 @@ export default function Download() {
         <p className="eyebrow">Download</p>
         <h1>Get ddugit</h1>
         <p className="lead">
-          No sign-up needed. Every install starts with a 14-day <Link href="/pricing">Pro</Link> trial, and the app
-          keeps itself up to date.
+          No sign-up needed. Free has no time limit, <Link href="/pricing">Pro</Link> is a one-time purchase, and the
+          app keeps itself up to date.
         </p>
         <div className="download-box">
           <DownloadButtons />

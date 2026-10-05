@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Icon, type IconName } from "@/components/Icon";
 import { Screen } from "@/components/Screen";
-import { SITE } from "@/site";
+import { DEVICES, PRO_PRICE, SITE, usd } from "@/site";
 
 type Feature = { icon: IconName; name: string; body: string };
 
@@ -105,7 +105,7 @@ export default function Home() {
             See pricing
           </Link>
         </div>
-        <p className="hero-note">Free for everyday Git · 14-day Pro trial, no sign-up</p>
+        <p className="hero-note">Free for everyday Git, no sign-up · Pro is {usd(PRO_PRICE)} once, yours forever</p>
       </section>
 
       <div className="hero-shot">
@@ -150,8 +150,8 @@ export default function Home() {
           <p className="eyebrow">ddugit Pro</p>
           <h2>For teams that ship from more than one branch</h2>
           <p>
-            Backports, stacks, release notes and transfers into closed networks. Everything in Free is included, and
-            every install starts with 14 days of Pro.
+            Backports, stacks, release notes and transfers into closed networks. Everything in Free is included. Pay
+            once, use it forever on up to {DEVICES} devices, and get every future update.
           </p>
         </header>
         <Screen name="backport" alt="The backport sheet listing commits missing from a branch" />
@@ -163,7 +163,7 @@ export default function Home() {
 
       <section className="cta">
         <h2>Open your repository in ddugit</h2>
-        <p>No account needed to download or use it. Pro features are on for the first 14 days.</p>
+        <p>No account needed to download or use it. Free has no time limit.</p>
         <div className="actions">
           <Link href="/download" className="button primary large">
             Download for free
