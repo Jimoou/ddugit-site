@@ -20,6 +20,13 @@ export const DEVICES = 3;
  */
 export const DOWNLOADS_URL = process.env.NEXT_PUBLIC_DOWNLOADS_URL ?? "";
 
+/**
+ * Lemon Squeezy's checkout link for Pro (Products → Share), e.g.
+ * `https://<store>.lemonsqueezy.com/buy/<variant>`. Empty until the store is live:
+ * the pricing page then says "Available soon".
+ */
+export const CHECKOUT_URL = process.env.NEXT_PUBLIC_LS_CHECKOUT_URL?.trim() ?? "";
+
 /** Prices are in US dollars (the store, Lemon Squeezy, charges in USD). */
 export const usd = (n: number) => `$${n.toLocaleString("en-US")}`;
 

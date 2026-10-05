@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { DEVICES, PRO_PRICE, SITE, usd } from "@/site";
+import { CHECKOUT_URL, DEVICES, PRO_PRICE, SITE, usd } from "@/site";
 
 export const metadata: Metadata = { title: "Pricing" };
 
@@ -137,9 +137,15 @@ export default function Pricing() {
             <span className="per">one-time</span>
           </p>
           <p className="plan-desc">Use forever · all future updates included · up to {DEVICES} devices.</p>
-          <span className="button primary" aria-disabled="true">
-            Available soon
-          </span>
+          {CHECKOUT_URL ? (
+            <Link href="/checkout" className="button primary" prefetch={false}>
+              Buy Pro
+            </Link>
+          ) : (
+            <span className="button primary" aria-disabled="true">
+              Available soon
+            </span>
+          )}
           <Lines items={PRO_LINES} />
         </article>
         <article className="plan">
@@ -152,7 +158,11 @@ export default function Pricing() {
           <Lines items={["Everything in Pro", "Seats for the whole organization", "Works fully offline"]} />
         </article>
       </section>
-      <p className="plans-note">Checkout opens once our store is verified. Pay once, no subscription.</p>
+      <p className="plans-note">
+        {CHECKOUT_URL
+          ? "Pay once, no subscription. Secure checkout by Lemon Squeezy."
+          : "Checkout opens once our store is verified. Pay once, no subscription."}
+      </p>
 
       <section className="section narrow" aria-labelledby="compare">
         <h2 id="compare" className="center">
