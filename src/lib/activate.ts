@@ -125,6 +125,22 @@ export function licenseLabel(row: Pick<LicenseRow, "kind" | "plan">): string {
 /** Cookie holding where to go after signing in (`safeNext`). */
 export const NEXT_COOKIE = "ddugit_next";
 
-/** A same-site path to return to after signing in (never another origin). */
-export const safeNext = (next: string | undefined | null) =>
-  next && next.startsWith("/") && !next.startsWith("//") && !next.includes("\\") ? next : "/account";
+const HERE = "https://ddugit.invalid";
+
+/**
+ * A same-site path to return to after signing in (never another origin), normalized;
+ * "/account" for anything else. Backslashes and control characters (tabs, newlines) are
+ * refused outright, since URL parsers drop or turn them into "/" ("/\t/evil.com" reads as
+ * "//evil.com"); so is a path that normalizes to start with "//" ("/.//evil.com").
+ */
+export function safeNext(next: string | undefined | null): string {
+  if (!next || !next.startsWith("/") || /[\\\p{Cc}]/u.test(next)) return "/account";
+  let url: URL;
+  try {
+    url = new URL(next, HERE);
+  } catch {
+    return "/account";
+  }
+  if (url.origin !== HERE || url.pathname.startsWith("//")) return "/account";
+  return `${url.pathname}${url.search}${url.hash}`;
+}

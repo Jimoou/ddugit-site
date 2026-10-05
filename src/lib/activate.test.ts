@@ -121,6 +121,26 @@ test("licenses are labelled by kind and plan", () => {
 
 test("after signing in, only paths on this site", () => {
   assert.equal(safeNext("/activate?port=1&state=x"), "/activate?port=1&state=x");
-  for (const bad of ["https://evil.example", "//evil.example", "/\\evil", "", null])
-    assert.equal(safeNext(bad), "/account");
+  assert.equal(safeNext("/admin?status=new&open=x#r-1"), "/admin?status=new&open=x#r-1");
+  assert.equal(safeNext("/a/../account"), "/account");
+  for (const bad of [
+    "https://evil.example",
+    "//evil.example",
+    "/\\evil",
+    "/\\/evil.com",
+    "/\t/evil.com",
+    "/\n/evil.com",
+    "/\r//evil.com",
+    "/\u0000/evil.com",
+    "/.//evil.com",
+    "/%2e//evil.com",
+    "///evil.com",
+    "",
+    null,
+    undefined,
+  ])
+    assert.equal(safeNext(bad), "/account", JSON.stringify(bad));
+  // Whatever comes out stays on this site.
+  for (const ok of ["/account", "/activate?port=1&state=x", "/a//b"])
+    assert.equal(new URL(safeNext(ok), "https://ddugit.com").origin, "https://ddugit.com");
 });

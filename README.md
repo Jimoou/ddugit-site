@@ -14,6 +14,32 @@ npm run build
 - 설치 파일: Supabase Storage `releases` 버킷. ddugit 저장소의 Release workflow가 올리고 `downloads.json`을 쓴다
 - 다운로드와 앱 사용에는 로그인이 없다. 로그인(GitHub·Google, Supabase Auth)은 구매·라이선스 관리에만 쓴다
 
+## Auth settings (Supabase 대시보드, 저장소 밖)
+
+라이선스·기기·관리자 권한은 모두 로그인의 이메일(`auth.jwt() ->> 'email'`)로 판단한다. 그래서 그 이메일이 확인된 것이어야 한다. Supabase → Authentication에서 확인하고, 바꾸면 여기 날짜를 적는다:
+
+- [ ] **Sign In / Providers → Email: 끈다**(사이트는 GitHub·Google만 쓴다). 켜 둬야 한다면 **Confirm email: 켬**, **Secure email change: 켬**(둘 중 하나라도 꺼져 있으면 누구나 남의 이메일로 가입하거나 `auth.updateUser({ email })`로 바꿔 그 사람의 라이선스·기기·관리자 화면을 쓸 수 있다)
+- [ ] **Anonymous sign-ins: 끔**
+- [ ] GitHub·Google만 켬(`site.ts`의 `LOGIN_PROVIDERS`와 같게). URL Configuration의 Site URL `https://ddugit.com`, Redirect URLs에 `https://ddugit.com/auth/callback`
+
+## 서버 환경 변수 한눈에
+
+| 어디             | 이름                                                        | 필수   | 설명                                                                     |
+| ---------------- | ----------------------------------------------------------- | ------ | ------------------------------------------------------------------------ |
+| Netlify          | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 예     | 공개 값                                                                  |
+| Netlify          | `REPORT_FORWARD_SECRET`                                     | 예     | Supabase와 같은 값. 없으면 `/api/report` 503                             |
+| Netlify          | `ALLOW_TEST_LICENSES`                                       | 아니오 | `true`면 `/activate`가 테스트 주문 라이선스도 고른다. 테스트 구매할 때만 |
+| Supabase Secrets | `DDUGIT_LICENSE_PRIVATE_KEY`, `DDUGIT_LICENSE_PUBKEY`       | 예     | 라이선스 서명·확인                                                       |
+| Supabase Secrets | `LEMONSQUEEZY_WEBHOOK_SECRET`, `LEMONSQUEEZY_PRODUCT_ID`    | 예     | 상품 id 없으면 웹훅이 라이선스를 만들지 않는다(500)                      |
+| Supabase Secrets | `REPORT_SALT`, `REPORT_FORWARD_SECRET`                      | 예     | 없으면 `report` 503                                                      |
+| Supabase Secrets | `ALLOW_TEST_LICENSES`                                       | 아니오 | `true`면 테스트 주문 라이선스를 활성화·유지한다. 평소에는 비워 둔다      |
+
+`https://ddugit.com/api/status`가 Netlify 쪽 값이 있는지(이름만) 보여 준다.
+
+## 보안 헤더
+
+`next.config.ts`가 모든 페이지에 붙인다: `Content-Security-Policy: frame-ancestors 'none'; object-src 'none'; base-uri 'self'`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`(`/activate`는 `no-referrer`), `Permissions-Policy`, HSTS. 스크립트 CSP(`script-src`)는 Next의 인라인 스크립트에 요청마다 nonce가 필요해서 넣지 않았고, `form-action`은 서버 액션이 GitHub·Google 로그인과 앱의 `127.0.0.1`로 리디렉트하므로 넣지 않는다.
+
 ## 라이선스 (Supabase)
 
 - 판매: 평생 라이선스 하나(`site.ts`의 `PRO_PRICE`, 한 번 결제, 이후 업데이트 모두 포함), 라이선스당 기기 3대(`licenses.max_devices`). 사이트 라이선스(`kind = 'site'`)는 기기 제한이 없다
