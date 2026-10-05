@@ -1,6 +1,9 @@
 import Image from "next/image";
 
-/** A screenshot of the app (public/screens, captured from the demo at 2x), in a console frame. */
+/**
+ * A screenshot of the app (public/screens: 2880x1800, captured from the demo at 2x, webp 0.95),
+ * in a console frame. Served as is: Next's image optimizer would recompress it and blur the UI text.
+ */
 export function Screen({ name, alt, priority }: { name: string; alt: string; priority?: boolean }) {
   return (
     <figure className="screen">
@@ -10,6 +13,7 @@ export function Screen({ name, alt, priority }: { name: string; alt: string; pri
         width={2880}
         height={1800}
         priority={priority}
+        unoptimized
         sizes="(max-width: 1100px) 100vw, 1040px"
       />
     </figure>
