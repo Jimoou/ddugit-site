@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { SITE } from "@/site";
 
 export const metadata: Metadata = { title: "Privacy" };
@@ -19,6 +20,13 @@ export default function Privacy() {
       <p>
         Downloading needs no sign-in. When you buy or manage a license, signing in with GitHub or Google gives us your
         email address and name.
+      </p>
+      <h2>Problem reports and questions</h2>
+      <p>
+        When you report a problem or ask a question, from the app or the <Link href="/contact">contact form</Link>, we
+        keep what you send: your message, the email address if you give one, and from the app its version, your
+        operating system and the diagnostics you see before sending. We use them only to answer you and fix ddugit. To
+        limit abuse we keep a salted hash of your IP address, never the address itself.
       </p>
       <h2>Payments</h2>
       <p>Payments are handled by our payment provider. ddugit never receives or stores card details.</p>

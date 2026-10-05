@@ -49,7 +49,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </div>
               <div>
                 <h2>Contact</h2>
-                <a href={`mailto:${SITE.contact}`}>{SITE.contact}</a>
+                <Link href="/contact">Report a problem</Link>
+                <Link href="/contact?topic=question">Ask a question</Link>
               </div>
             </nav>
           </div>

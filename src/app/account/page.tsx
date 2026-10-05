@@ -32,7 +32,7 @@ export default async function Account({ searchParams }: { searchParams: Promise<
 
   const name = (user.user_metadata.full_name ?? user.user_metadata.user_name ?? user.email) as string;
   const db = await supabaseServer();
-  const [{ data: licenses }, { data: devices }] = await Promise.all([
+  const [{ data: licenses }, { data: devices }, { data: admin }] = await Promise.all([
     db
       .from("licenses")
       .select("id, kind, plan, seats, status, paid_through, max_devices, text, store_test")
@@ -41,6 +41,8 @@ export default async function Account({ searchParams }: { searchParams: Promise<
       .from("devices")
       .select("license_id, device_hash, name, created_at, last_seen_at")
       .order("created_at", { ascending: true }),
+    // RLS shows a user only their own admin row, if any.
+    db.from("admins").select("email").limit(1),
   ]);
   return (
     <div className="page prose">
@@ -97,6 +99,11 @@ export default async function Account({ searchParams }: { searchParams: Promise<
           No licenses bought with {user.email} yet. <Link href="/pricing">See pricing</Link>
         </p>
       )}
+      {admin?.length ? (
+        <p>
+          <Link href="/admin">Reports dashboard</Link>
+        </p>
+      ) : null}
       <form action={signOut}>
         <button className="button">Sign out</button>
       </form>

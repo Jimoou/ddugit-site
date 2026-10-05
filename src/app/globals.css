@@ -1166,3 +1166,314 @@ main:has(> .auth) {
 .prose .devices form {
   margin-top: 0;
 }
+
+/* Forms: square fields on black, like the app's inputs */
+.field {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 20px;
+}
+.field label,
+.kind-choice legend,
+.report-note label {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.field label .muted {
+  font-weight: 400;
+}
+.field input,
+.field textarea,
+.report-note textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--text);
+  font: 15px/1.5 var(--sans);
+}
+.field textarea,
+.report-note textarea {
+  resize: vertical;
+}
+.field input:focus-visible,
+.field textarea:focus-visible,
+.report-note textarea:focus-visible {
+  outline: none;
+  border-color: rgba(var(--signal), 0.7);
+  box-shadow: 0 0 0 1px rgba(var(--signal), 0.7);
+}
+.field ::placeholder,
+.report-note ::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Contact: report a problem or ask a question */
+.prose .report-form {
+  margin-top: 32px;
+}
+.kind-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 0 0 24px;
+  padding: 0;
+  border: 0;
+}
+.kind-choice legend {
+  margin-bottom: 8px;
+  padding: 0;
+}
+.kind-option {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  cursor: pointer;
+}
+.kind-option:has(input:checked) {
+  border-color: rgba(var(--signal), 0.5);
+  background: var(--brackets), rgba(var(--signal), 0.05);
+}
+.kind-option:has(input:focus-visible) {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+.kind-option input {
+  margin: 4px 0 0;
+  accent-color: var(--ui);
+}
+.kind-option strong {
+  display: block;
+  color: var(--text);
+}
+.kind-option .muted {
+  display: block;
+  line-height: 1.4;
+}
+@media (max-width: 520px) {
+  .kind-choice {
+    grid-template-columns: 1fr;
+  }
+}
+.trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.report-form > .button {
+  margin: 4px 0 16px;
+}
+.report-sent {
+  margin-top: 32px;
+}
+.report-sent p {
+  margin-bottom: 16px;
+}
+
+/* Admin: the reports inbox */
+.admin-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px 24px;
+  margin-bottom: 28px;
+}
+.admin-head h1 {
+  margin: 0;
+  font-size: clamp(32px, 4vw, 44px);
+}
+.admin-head p {
+  margin: 0;
+}
+.admin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 32px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.chips-label {
+  margin-right: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.chip {
+  padding: 4px 10px;
+  border: 1px solid var(--line-strong);
+  color: var(--text-2);
+  font-size: 13px;
+  text-decoration: none;
+}
+.chip:hover {
+  border-color: rgba(var(--signal), 0.38);
+}
+.chip[aria-current] {
+  border-color: rgba(var(--signal), 0.6);
+  background: rgba(var(--signal), 0.08);
+  color: var(--text);
+}
+.reports {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+.reports > li {
+  border-bottom: 1px solid var(--line);
+}
+.report summary {
+  display: grid;
+  grid-template-columns: 10px 84px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 8px;
+  cursor: pointer;
+  list-style: none;
+}
+.report summary::-webkit-details-marker {
+  display: none;
+}
+.report summary:hover,
+.report[open] summary {
+  background: rgba(255, 255, 255, 0.025);
+}
+.report.status-done summary {
+  opacity: 0.6;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--muted);
+  border-radius: 50%;
+}
+.status-dot.new {
+  border-color: var(--cyan);
+  background: var(--cyan);
+  box-shadow: 0 0 8px rgba(var(--signal), 0.6);
+}
+.status-dot.done {
+  border-color: transparent;
+  background: rgba(255, 255, 255, 0.25);
+}
+.report-kind {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.report.status-new .report-excerpt {
+  font-weight: 600;
+}
+.report-excerpt {
+  overflow: hidden;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.report-meta {
+  font-size: 13px;
+  white-space: nowrap;
+}
+@media (max-width: 720px) {
+  .report summary {
+    grid-template-columns: 10px minmax(0, 1fr);
+    gap: 4px 12px;
+  }
+  .report-kind,
+  .report-meta {
+    grid-column: 2;
+  }
+  .report-excerpt {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .report-meta {
+    grid-row: 3;
+  }
+}
+.report-body {
+  padding: 8px 8px 24px 32px;
+}
+@media (max-width: 720px) {
+  .report-body {
+    padding-left: 8px;
+  }
+}
+.report-message {
+  max-width: 760px;
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.report-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px 24px;
+  margin: 20px 0;
+}
+.report-facts dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.report-facts dd {
+  margin: 2px 0 0;
+  color: var(--text-2);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.report-sub {
+  margin: 20px 0 8px;
+  font-size: 14px;
+}
+.report-diag {
+  max-height: 320px;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font: 12px/1.5 var(--mono);
+  white-space: pre;
+}
+.report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0;
+}
+.report-note {
+  display: grid;
+  gap: 8px;
+  max-width: 760px;
+}
+.report-note .button {
+  justify-self: start;
+}
+.admin-pages {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+}
