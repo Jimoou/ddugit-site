@@ -8,6 +8,8 @@
 //     data: { type: "orders", id, attributes: { user_name, user_email, status, refunded,
 //             first_order_item: { product_id, variant_id, quantity, … }, … } } }
 
+import { isEmail } from "./email.ts";
+
 /** Devices one Pro purchase covers (`site.ts`'s DEVICES); `quantity` copies cover that many times more. */
 export const DEVICES_PER_COPY = 3;
 
@@ -79,8 +81,6 @@ export type Decision =
   | { action: "refund"; row: PurchaseRow }
   | { action: "ignore"; reason: string };
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 /**
  * LEMONSQUEEZY_PRODUCT_ID: the store products that are ddugit Pro, comma-separated.
  * Required: with none, the webhook refuses to make licenses (any product in the store would).
@@ -107,8 +107,8 @@ export function decide(event: StoreEvent, products: readonly string[]): Decision
   if (!products.includes(String(item?.product_id ?? ""))) return { action: "ignore", reason: "another product" };
 
   const custom = event.meta?.custom_data?.email;
-  const email = (typeof custom === "string" && EMAIL.test(custom.trim()) ? custom : (a.user_email ?? "")).trim();
-  if (!EMAIL.test(email)) return { action: "ignore", reason: "no buyer email" };
+  const email = (typeof custom === "string" && isEmail(custom.trim()) ? custom : (a.user_email ?? "")).trim();
+  if (!isEmail(email)) return { action: "ignore", reason: "no buyer email" };
 
   // Only a full refund takes the license back; a partial one (e.g. tax) leaves it.
   const refunded = a.status === "refunded";

@@ -42,16 +42,17 @@ npm run build
 
 ## 문제 신고·문의 (Supabase)
 
-앱과 사이트(`/contact`)는 이메일 대신 HTTPS로 보낸다: `POST ddugit.com/api/report` → Next 라우트(`src/app/api/report`)가 방문자 IP를 헤더(`x-ddugit-client-ip`, `x-forwarded-for`)에 실어 `report` 함수로 넘긴다.
+앱과 사이트(`/contact`)는 이메일 대신 HTTPS로 보낸다: `POST ddugit.com/api/report` → Next 라우트(`src/app/api/report`)가 공유 비밀(`x-ddugit-forward: <REPORT_FORWARD_SECRET>`)과 방문자 IP(`x-ddugit-client-ip`, Netlify가 넣는 `x-nf-client-connection-ip`만 믿는다)를 실어 `report` 함수로 넘긴다. 함수는 비밀이 맞을 때만(상수 시간 비교) 받고 그 IP를 믿는다. 함수를 직접 부르면 403. 비밀이 어느 한쪽에라도 없으면 둘 다 503(닫힘).
 
-- 요청: `{ kind: "bug"|"question", message(1..5000), email?(≤254), diagnostics?(≤20000), source: "app"|"web", appVersion?(≤32), os?(≤64), website?(허니팟) }` → `200 { ok, id }` | `400 { error }` | `413`(64KB 초과) | `429 { error: "Too many reports. Try again later." }` | `5xx`
+- 요청: `{ kind: "bug"|"question", message(1..5000), email?(≤254, `? & % #`·슬래시·따옴표 없는 주소), diagnostics?(≤20000), source: "app"|"web", appVersion?(≤32), os?(≤64), website?(허니팟) }` → `200 { ok, id }` | `400 { error }` | `403`(사이트를 거치지 않음) | `413`(64KB 초과) | `429 { error: "Too many reports. Try again later." }` | `503`(설정 없음) | `5xx`
 - `supabase/functions/report`: 검사(순수 로직 `_shared/report.ts`, `npm test`), 허니팟이 차 있으면 저장 없이 200, 보낸 사람(= `REPORT_SALT`와 IP의 SHA-256)당 시간당 5건 + 전체 시간당 200건. IP 자체와 내용(메시지·이메일)은 저장·로그하지 않는다(해시만 `reports.sender_hash`)
 - `reports` 테이블: 함수(service role)만 넣는다. 관리자(`admins`의 이메일, 대소문자 무시)만 읽고, `status`(new/read/done)·`note`만 고칠 수 있다(RLS + 열 단위 권한). API로는 아무도 지울 수 없다
-- `/admin`: 관리자만(그 밖에는 404). 상태·종류·출처 필터, 상태별 개수, 펼치면 메시지·답장 메일 링크·버전·OS·진단 정보, 상태 바꾸기와 비공개 메모. 계정 페이지에 관리자에게만 링크가 보인다
+- `/admin`: 관리자만(그 밖에는 404). 상태·종류·출처 필터, 상태별 개수, 펼치면 메시지·답장 메일 링크(주소가 엄격한 검사를 통과할 때만, 인코딩해서: `_shared/email.ts`의 `replyLink`)·버전·OS·진단 정보, 상태 바꾸기와 비공개 메모. 계정 페이지에 관리자에게만 링크가 보인다
 
 한 번 설정:
 
-1. Supabase → Edge Functions → Secrets: `REPORT_SALT` = 임의의 긴 값(예: `openssl rand -hex 32`). 없으면 함수가 503을 돌려준다. 바꾸면 그때부터 속도 제한이 새로 센다
-2. 마이그레이션과 함수는 `main`에 머지되면 Supabase workflow가 올린다(`20261007000000_reports.sql`, `report` 함수). 소유자(`kfromh0136@gmail.com`)는 마이그레이션이 관리자로 넣는다
-3. 관리자 추가: Supabase → SQL Editor에서 `insert into public.admins (email) values ('someone@example.com');`(그 사람이 ddugit.com에 로그인하는 GitHub·Google 계정의 이메일). 빼기는 `delete from public.admins where email = '…';`
-4. 오래된 신고 지우기(필요할 때): `delete from public.reports where status = 'done' and created_at < now() - interval '1 year';`
+1. Supabase → Edge Functions → Secrets: `REPORT_SALT` = 임의의 긴 값(예: `openssl rand -hex 32`). 바꾸면 그때부터 속도 제한이 새로 센다
+2. 전달 비밀 `REPORT_FORWARD_SECRET` = 임의의 긴 값(`openssl rand -hex 32`) 하나를 **두 곳에 같게**: Supabase → Edge Functions → Secrets, 그리고 Netlify → Site configuration → Environment variables(서버 전용, `NEXT_PUBLIC_` 아님, 넣은 뒤 다시 배포). 둘 중 하나라도 없으면 신고가 503으로 막힌다. 바꿀 때는 두 곳을 함께 바꾼다(그 사이 신고는 403)
+3. 마이그레이션과 함수는 `main`에 머지되면 Supabase workflow가 올린다(`20261007000000_reports.sql`, `report` 함수). 소유자(`kfromh0136@gmail.com`)는 마이그레이션이 관리자로 넣는다
+4. 관리자 추가: Supabase → SQL Editor에서 `insert into public.admins (email) values ('someone@example.com');`(그 사람이 ddugit.com에 로그인하는 GitHub·Google 계정의 이메일). 빼기는 `delete from public.admins where email = '…';`
+5. 오래된 신고 지우기(필요할 때): `delete from public.reports where status = 'done' and created_at < now() - interval '1 year';`

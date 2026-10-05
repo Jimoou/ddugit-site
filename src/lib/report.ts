@@ -1,27 +1,20 @@
-/** Something that looks like an IPv4 or IPv6 address (no ports, no names). */
-const IP = /^[0-9A-Fa-f:.]{2,45}$/;
+// What the site's /api/report adds when it passes a report on to the report function:
+// the shared secret that proves the request came through here, and the visitor's IP
+// (the function keeps only a salted hash of it, for its rate limit).
+
+import { CLIENT_IP_HEADER, FORWARD_HEADER, isIp } from "../../supabase/functions/_shared/report.ts";
 
 /**
- * The visitor's IP as Netlify reports it (`x-nf-client-connection-ip`), else the first
- * `x-forwarded-for` entry, else `x-real-ip`. Null when none looks like an IP.
+ * The visitor's IP as Netlify reports it (`x-nf-client-connection-ip`, which Netlify sets
+ * itself). Not `x-forwarded-for` or `x-real-ip`: a visitor can write those. Null without one.
  */
 export function clientIp(headers: { get(name: string): string | null }): string | null {
-  for (const c of [
-    headers.get("x-nf-client-connection-ip"),
-    headers.get("x-forwarded-for")?.split(",")[0],
-    headers.get("x-real-ip"),
-  ]) {
-    const ip = c?.trim();
-    if (ip && IP.test(ip)) return ip;
-  }
-  return null;
+  const ip = headers.get("x-nf-client-connection-ip")?.trim();
+  return ip && isIp(ip) ? ip : null;
 }
 
-/**
- * Headers that carry the visitor's IP to the report function, which keeps only a salted
- * hash of it for its rate limit. Without them every report would come from this server.
- */
-export function senderHeaders(headers: { get(name: string): string | null }): Record<string, string> {
+/** Headers for the report function: REPORT_FORWARD_SECRET (`secret`) and the visitor's IP, if known. */
+export function forwardHeaders(headers: { get(name: string): string | null }, secret: string): Record<string, string> {
   const ip = clientIp(headers);
-  return ip ? { "x-ddugit-client-ip": ip, "x-forwarded-for": ip } : {};
+  return { [FORWARD_HEADER]: secret, ...(ip ? { [CLIENT_IP_HEADER]: ip } : {}) };
 }

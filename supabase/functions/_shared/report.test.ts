@@ -1,7 +1,16 @@
 import { strict as assert } from "node:assert";
 import { createHash } from "node:crypto";
 import { test } from "node:test";
-import { ALL_HOUR, PER_SENDER_HOUR, allowed, checkReport, isBot, senderHash, senderIp } from "./report.ts";
+import {
+  ALL_HOUR,
+  PER_SENDER_HOUR,
+  allowed,
+  checkReport,
+  forwardedBySite,
+  isBot,
+  senderHash,
+  senderIp,
+} from "./report.ts";
 
 const base = { kind: "bug", message: "The graph froze.", source: "app" };
 const err = (body: unknown) => {
@@ -77,7 +86,7 @@ test("lengths are counted in characters, not UTF-16 units", () => {
 
 test("an email must look like one and fit in 254 characters", () => {
   assert.equal(err({ ...base, email: "a@b.co" }), null);
-  for (const bad of ["ada", "ada@", "@x.com", "a b@x.com", "ada@example", 5])
+  for (const bad of ["ada", "ada@", "@x.com", "a b@x.com", "ada@example", "a@b.co?cc=x%40evil.com&body=hi", 5])
     assert.match(err({ ...base, email: bad })!, /email/, String(bad));
   assert.match(err({ ...base, email: `${"a".repeat(245)}@example.com` })!, /email/);
 });
@@ -91,18 +100,23 @@ test("the honeypot catches any non-empty website", () => {
   assert.equal(isBot(null), false);
 });
 
-test("the sender IP comes from the site's header first, then the proxies'", () => {
+test("only the site's forwarded IP counts; proxy headers a caller can write don't", () => {
   const h = (o: Record<string, string>) => new Headers(o);
-  assert.equal(
-    senderIp(
-      h({ "x-ddugit-client-ip": "203.0.113.9", "x-forwarded-for": "198.51.100.1", "cf-connecting-ip": "1.1.1.1" }),
-    ),
-    "203.0.113.9",
-  );
-  assert.equal(senderIp(h({ "x-forwarded-for": "198.51.100.1, 10.0.0.1" })), "198.51.100.1");
-  assert.equal(senderIp(h({ "cf-connecting-ip": "2001:DB8::1" })), "2001:db8::1");
-  assert.equal(senderIp(h({ "x-ddugit-client-ip": "evil<script>", "cf-connecting-ip": "1.1.1.1" })), "1.1.1.1");
+  assert.equal(senderIp(h({ "x-ddugit-client-ip": "203.0.113.9", "x-forwarded-for": "198.51.100.1" })), "203.0.113.9");
+  assert.equal(senderIp(h({ "x-ddugit-client-ip": "2001:DB8::1" })), "2001:db8::1");
+  assert.equal(senderIp(h({ "x-forwarded-for": "198.51.100.1", "cf-connecting-ip": "1.1.1.1" })), null);
+  assert.equal(senderIp(h({ "x-ddugit-client-ip": "evil<script>" })), null);
   assert.equal(senderIp(h({})), null);
+});
+
+test("a request counts as the site's only with the exact forwarding secret", async () => {
+  const h = (v?: string) => new Headers(v === undefined ? {} : { "x-ddugit-forward": v });
+  assert.equal(await forwardedBySite(h("s3cret-value"), "s3cret-value"), true);
+  assert.equal(await forwardedBySite(h("s3cret-valuE"), "s3cret-value"), false);
+  assert.equal(await forwardedBySite(h("s3cret"), "s3cret-value"), false);
+  assert.equal(await forwardedBySite(h(), "s3cret-value"), false);
+  assert.equal(await forwardedBySite(h(""), ""), false);
+  assert.equal(await forwardedBySite(h("anything"), ""), false);
 });
 
 test("the sender hash is the salted SHA-256, never the IP", async () => {
