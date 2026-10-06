@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { NOINDEX } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Activate ddugit Pro", robots: { index: false } };
+export const metadata: Metadata = { title: "Activate ddugit Pro", robots: NOINDEX };
 
 /** Where the app sends the browser once it has (or hasn't) got its license. */
 export default async function Done({ searchParams }: { searchParams: Promise<{ result?: string }> }) {

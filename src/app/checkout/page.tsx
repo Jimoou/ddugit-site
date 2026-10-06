@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { NOINDEX } from "@/lib/seo";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
@@ -8,7 +9,7 @@ import { hasSupabase } from "@/lib/supabase/config";
 import { supabaseServer } from "@/lib/supabase/server";
 import { CHECKOUT_URL, PRO_PRICE, usd } from "@/site";
 
-export const metadata: Metadata = { title: "Buy ddugit Pro", robots: { index: false } };
+export const metadata: Metadata = { title: "Buy ddugit Pro", robots: NOINDEX };
 
 /**
  * The pricing page's Pro button: sign in first (so the license lands on this

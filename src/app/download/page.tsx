@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import DownloadButtons from "@/components/DownloadButtons";
 
-export const metadata: Metadata = { title: "Download" };
+export const metadata: Metadata = pageMeta("/download");
 
 export default function Download() {
   return (

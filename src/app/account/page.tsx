@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { NOINDEX } from "@/lib/seo";
 import Link from "next/link";
 import { hasSupabase } from "@/lib/supabase/config";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -7,7 +8,7 @@ import { Devices } from "@/components/Devices";
 import { licenseLabel } from "@/lib/activate";
 import { signOut } from "./actions";
 
-export const metadata: Metadata = { title: "Account" };
+export const metadata: Metadata = { title: "Account", robots: NOINDEX };
 
 export default async function Account({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;

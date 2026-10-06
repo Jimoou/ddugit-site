@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { NOINDEX } from "@/lib/seo";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Thank you", robots: { index: false } };
+export const metadata: Metadata = { title: "Thank you", robots: NOINDEX };
 
 /** Where the store sends the buyer after paying (Lemon Squeezy → product → button link). */
 export default function Thanks() {

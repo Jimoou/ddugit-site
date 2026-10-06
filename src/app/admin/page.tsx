@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { NOINDEX } from "@/lib/seo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -20,7 +21,7 @@ import { hasSupabase } from "@/lib/supabase/config";
 import { supabaseServer } from "@/lib/supabase/server";
 import { saveNote, setStatus } from "./actions";
 
-export const metadata: Metadata = { title: "Reports", robots: { index: false } };
+export const metadata: Metadata = { title: "Reports", robots: NOINDEX };
 
 type Report = {
   id: string;

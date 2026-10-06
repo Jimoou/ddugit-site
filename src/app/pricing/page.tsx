@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import { CHECKOUT_URL, DEVICES, PRO_PRICE, usd } from "@/site";
 
-export const metadata: Metadata = { title: "Pricing" };
+export const metadata: Metadata = pageMeta("/pricing");
 
 /** A table cell: included, not included, or a short note. */
 type Cell = boolean | string;

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { NOINDEX } from "@/lib/seo";
 import Link from "next/link";
 import { AuthSplit } from "@/components/AuthSplit";
 import { Devices } from "@/components/Devices";
@@ -14,7 +15,7 @@ import { hasSupabase } from "@/lib/supabase/config";
 import { supabaseServer } from "@/lib/supabase/server";
 import { activate } from "./actions";
 
-export const metadata: Metadata = { title: "Activate ddugit Pro", robots: { index: false } };
+export const metadata: Metadata = { title: "Activate ddugit Pro", robots: NOINDEX };
 
 type Params = { port?: string; state?: string; device?: string; name?: string };
 

@@ -2,14 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { Wordmark } from "@/components/Wordmark";
+import { OPEN_GRAPH, PAGES, TWITTER } from "@/lib/seo";
 import { SITE } from "@/site";
 import "./globals.css";
 
+// Defaults for every page; public pages add their own title, description and canonical URL (`pageMeta`).
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
-  title: { default: `${SITE.name} · ${SITE.tagline}`, template: `%s · ${SITE.name}` },
-  description:
-    "ddugit is a Git client for macOS and Windows built around the commit graph. Drag to merge, rebase from a list, and keep every repository in view.",
+  title: { default: PAGES["/"].title, template: `%s · ${SITE.name}` },
+  description: PAGES["/"].description,
+  applicationName: SITE.name,
+  openGraph: OPEN_GRAPH,
+  twitter: TWITTER,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
