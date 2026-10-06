@@ -1,24 +1,44 @@
 import { strict as assert } from "node:assert";
 import { createHmac } from "node:crypto";
 import { test } from "node:test";
-import { type StoreEvent, decide, newLicenseId, productIds, verifySignature } from "./store.ts";
+import {
+  type StoreEvent,
+  SIGNATURE_MAX_AGE_S,
+  decide,
+  newLicenseId,
+  paddleApi,
+  productIds,
+  purchaseRow,
+  verifySignature,
+} from "./store.ts";
 
-const PRO = ["77"];
+const PRO = ["pro_77"];
+const NOW = 1_760_000_000;
 
-const sign = (secret: string, body: string) => createHmac("sha256", secret).update(body).digest("hex");
+const h1 = (secret: string, ts: number | string, body: string) =>
+  createHmac("sha256", secret).update(`${ts}:${body}`).digest("hex");
 const bytes = (s: string) => new TextEncoder().encode(s);
 
-test("only the HMAC-SHA256 of the exact body under the secret passes", async () => {
-  const body = '{"meta":{"event_name":"order_created"}}';
-  const sig = sign("s3cret", body);
-  assert.equal(await verifySignature("s3cret", bytes(body), sig), true);
-  assert.equal(await verifySignature("s3cret", bytes(body), sig.toUpperCase()), true);
-  assert.equal(await verifySignature("s3cret", bytes(body + " "), sig), false);
-  assert.equal(await verifySignature("other", bytes(body), sig), false);
-  assert.equal(await verifySignature("s3cret", bytes(body), sig.slice(0, 62) + "00"), false);
-  assert.equal(await verifySignature("s3cret", bytes(body), null), false);
-  assert.equal(await verifySignature("s3cret", bytes(body), "zz" + sig.slice(2)), false);
-  assert.equal(await verifySignature("", bytes(body), sign("", body)), false);
+test("only the HMAC-SHA256 of ts:body under the secret, signed recently, passes", async () => {
+  const body = '{"event_type":"transaction.completed"}';
+  const ok = (header: string | null, secret = "pdl_ntfset_s3cret", raw = body, now = NOW) =>
+    verifySignature(secret, bytes(raw), header, now);
+  const sig = h1("pdl_ntfset_s3cret", NOW, body);
+  assert.equal(await ok(`ts=${NOW};h1=${sig}`), true);
+  assert.equal(await ok(`ts=${NOW}; h1=${sig.toUpperCase()}`), true);
+  // While a secret is rotated, either signature may be the right one.
+  assert.equal(await ok(`ts=${NOW};h1=${"0".repeat(64)};h1=${sig}`), true);
+  assert.equal(await ok(`ts=${NOW};h1=${sig}`, "pdl_ntfset_s3cret", body + " "), false);
+  assert.equal(await ok(`ts=${NOW};h1=${sig}`, "other"), false);
+  assert.equal(await ok(`ts=${NOW + 1};h1=${sig}`), false); // the timestamp is signed too
+  assert.equal(await ok(`h1=${sig}`), false);
+  assert.equal(await ok(`ts=${NOW}`), false);
+  assert.equal(await ok(null), false);
+  assert.equal(await ok(`ts=${NOW};h1=${sig}`, ""), false);
+  // Too old or too far ahead: a replayed notification.
+  const late = NOW + SIGNATURE_MAX_AGE_S + 1;
+  assert.equal(await ok(`ts=${NOW};h1=${sig}`, "pdl_ntfset_s3cret", body, late), false);
+  assert.equal(await ok(`ts=${NOW};h1=${sig}`, "pdl_ntfset_s3cret", body, NOW + SIGNATURE_MAX_AGE_S), true);
 });
 
 test("license ids look like the ones scripts/license.mjs makes", () => {
@@ -27,94 +47,109 @@ test("license ids look like the ones scripts/license.mjs makes", () => {
   assert.notEqual(a, newLicenseId());
 });
 
-const order = (over: { event?: string; status?: string; custom?: unknown; quantity?: number; test?: boolean } = {}) =>
+const txn = (over: { type?: string; custom?: unknown; customer?: string | null; items?: unknown } = {}) =>
   ({
-    meta: {
-      event_name: over.event ?? "order_created",
-      test_mode: over.test ?? false,
-      ...(over.custom === undefined ? {} : { custom_data: over.custom }),
-    },
+    event_id: "evt_1",
+    event_type: over.type ?? "transaction.completed",
     data: {
-      type: "orders",
-      id: "1234",
-      attributes: {
-        user_name: "Ada Lovelace",
-        user_email: "pay@example.com",
-        status: over.status ?? "paid",
-        refunded: over.status === "refunded",
-        first_order_item: { product_id: 77, variant_id: 88, quantity: over.quantity ?? 1 },
-      },
+      id: "txn_1234",
+      status: "completed",
+      customer_id: over.customer === undefined ? "ctm_9" : over.customer,
+      custom_data: over.custom === undefined ? { email: "login@example.com" } : over.custom,
+      items: over.items ?? [{ quantity: 1, price: { id: "pri_1", product_id: "pro_77" } }],
     },
   }) as StoreEvent;
 
-test("a paid order makes a lifetime license for three devices", () => {
-  assert.deepEqual(decide(order(), PRO), {
-    action: "create",
-    row: {
-      email: "pay@example.com",
-      name: "Ada Lovelace",
-      kind: "personal",
-      plan: "lifetime",
-      status: "active",
-      seats: 1,
-      max_devices: 3,
-      text: null,
-      store_order_id: "1234",
-      store_test: false,
+const adjustment = (over: { type?: string; action?: string; status?: string; kind?: string } = {}) =>
+  ({
+    event_type: over.type ?? "adjustment.updated",
+    data: {
+      id: "adj_1",
+      action: over.action ?? "refund",
+      status: over.status ?? "approved",
+      ...(over.kind === undefined ? { type: "full" } : over.kind === "" ? {} : { type: over.kind }),
+      transaction_id: "txn_1234",
     },
+  }) as StoreEvent;
+
+test("a completed Pro transaction makes a lifetime license for three devices, for the login passed at checkout", () => {
+  const d = decide(txn(), PRO);
+  assert.deepEqual(d, {
+    action: "create",
+    order: "txn_1234",
+    customer: "ctm_9",
+    email: "login@example.com",
+    copies: 1,
+  });
+  assert.deepEqual(purchaseRow(d as Extract<typeof d, { action: "create" }>, "login@example.com", " Ada ", false), {
+    email: "login@example.com",
+    name: "Ada",
+    kind: "personal",
+    plan: "lifetime",
+    status: "active",
+    seats: 1,
+    max_devices: 3,
+    text: null,
+    store_order_id: "txn_1234",
+    store_test: false,
   });
 });
 
-test("the license goes to the ddugit login passed at checkout, when it is an email", () => {
-  const to = (custom: unknown) => {
-    const d = decide(order({ custom }), PRO);
-    return d.action === "create" ? d.row.email : null;
-  };
-  assert.equal(to({ email: "Login@Example.com" }), "Login@Example.com");
-  assert.equal(to({ email: "not an email" }), "pay@example.com");
-  assert.equal(to({ email: 3 }), "pay@example.com");
-  assert.equal(to(null), "pay@example.com");
-});
-
-test("more copies, more devices; test mode is marked", () => {
-  const d = decide(order({ quantity: 2, test: true }), PRO);
-  assert.equal(d.action, "create");
-  if (d.action === "create") {
-    assert.equal(d.row.max_devices, 6);
-    assert.equal(d.row.store_test, true);
+test("without a usable login email the function looks up the customer; with neither, nothing happens", () => {
+  for (const custom of [null, {}, { email: "not an email" }, { email: 3 }]) {
+    const d = decide(txn({ custom }), PRO);
+    assert.equal(d.action === "create" && d.email, null);
+    assert.equal(d.action === "create" && d.customer, "ctm_9");
   }
-  const zero = decide(order({ quantity: 0 }), PRO);
-  assert.equal(zero.action === "create" && zero.row.max_devices, 3);
+  assert.equal(decide(txn({ custom: null, customer: null }), PRO).action, "ignore");
 });
 
-test("a full refund takes the license back; a partial one doesn't", () => {
-  const full = decide(order({ event: "order_refunded", status: "refunded" }), PRO);
-  assert.equal(full.action, "refund");
-  assert.equal(full.action === "refund" && full.row.status, "refunded");
-  assert.equal(decide(order({ event: "order_refunded", status: "partial_refund" }), PRO).action, "ignore");
-  // A retried order_created that already reads refunded never makes an active license.
-  assert.equal(decide(order({ status: "refunded" }), PRO).action, "refund");
-});
-
-test("other events, unpaid orders and other products change nothing", () => {
-  assert.equal(decide(order({ event: "subscription_created" }), PRO).action, "ignore");
-  assert.equal(decide(order({ status: "pending" }), PRO).action, "ignore");
-  assert.equal(decide(order({ status: "fraudulent" }), PRO).action, "ignore");
-  assert.equal(decide(order(), ["99", "77"]).action, "create");
-  assert.equal(decide(order(), ["99"]).action, "ignore");
-  assert.equal(
-    decide({ meta: { event_name: "order_created" }, data: { type: "subscriptions", id: 1 } }, PRO).action,
-    "ignore",
+test("more copies, more devices; other products in the same transaction don't count", () => {
+  const d = decide(
+    txn({
+      items: [
+        { quantity: 2, price: { product_id: "pro_77" } },
+        { quantity: 5, price: { product_id: "pro_other" } },
+        { quantity: 0, price: { product_id: "pro_77" } },
+      ],
+    }),
+    PRO,
   );
-  const noEmail = order();
-  noEmail.data!.attributes!.user_email = "";
-  assert.equal(decide(noEmail, PRO).action, "ignore");
+  assert.equal(d.action === "create" && d.copies, 3);
+  assert.equal(purchaseRow(d as Extract<typeof d, { action: "create" }>, "a@b.co", null, true).max_devices, 9);
+  assert.equal(purchaseRow(d as Extract<typeof d, { action: "create" }>, "a@b.co", null, true).name, "a@b.co");
+});
+
+test("an approved full refund or chargeback takes the license back; anything less doesn't", () => {
+  assert.deepEqual(decide(adjustment(), PRO), { action: "refund", order: "txn_1234" });
+  assert.equal(decide(adjustment({ type: "adjustment.created" }), PRO).action, "refund");
+  assert.equal(decide(adjustment({ action: "chargeback" }), PRO).action, "refund");
+  assert.equal(decide(adjustment({ kind: "" }), PRO).action, "refund");
+  assert.equal(decide(adjustment({ status: "pending_approval" }), PRO).action, "ignore");
+  assert.equal(decide(adjustment({ status: "rejected" }), PRO).action, "ignore");
+  assert.equal(decide(adjustment({ kind: "partial" }), PRO).action, "ignore");
+  assert.equal(decide(adjustment({ action: "credit" }), PRO).action, "ignore");
+  assert.equal(decide(adjustment({ action: "chargeback_reverse" }), PRO).action, "ignore");
+});
+
+test("other events and other products change nothing", () => {
+  assert.equal(decide(txn({ type: "transaction.paid" }), PRO).action, "ignore");
+  assert.equal(decide(txn({ type: "subscription.created" }), PRO).action, "ignore");
+  assert.equal(decide(txn(), ["pro_99", "pro_77"]).action, "create");
+  assert.equal(decide(txn(), ["pro_99"]).action, "ignore");
+  assert.equal(decide(txn({ items: [] }), PRO).action, "ignore");
+  assert.equal(decide({ event_type: "transaction.completed" }, PRO).action, "ignore");
 });
 
 test("without product ids nothing makes a license; the setting is a comma-separated list", () => {
-  assert.equal(decide(order(), []).action, "ignore");
-  assert.equal(decide(order({ event: "order_refunded", status: "refunded" }), []).action, "ignore");
-  assert.deepEqual(productIds(" 77, 78 ,,"), ["77", "78"]);
+  assert.equal(decide(txn(), []).action, "ignore");
+  assert.deepEqual(productIds(" pro_77, pro_78 ,,"), ["pro_77", "pro_78"]);
   assert.deepEqual(productIds(""), []);
   assert.deepEqual(productIds(undefined), []);
+});
+
+test("sandbox notifications go back to the sandbox API", () => {
+  assert.equal(paddleApi("sandbox"), "https://sandbox-api.paddle.com");
+  assert.equal(paddleApi("production"), "https://api.paddle.com");
+  assert.equal(paddleApi(""), "https://api.paddle.com");
 });

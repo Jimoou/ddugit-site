@@ -10,8 +10,8 @@ verify_jwt = false
 [functions.license-deactivate]
 verify_jwt = false
 
-# Lemon Squeezy's webhook: signed with X-Signature, no Supabase JWT.
-[functions.ls-webhook]
+# Paddle's webhook: signed with Paddle-Signature, no Supabase JWT.
+[functions.paddle-webhook]
 verify_jwt = false
 
 # Problem reports and inquiries from the app and /contact (through ddugit.com/api/report): no login.

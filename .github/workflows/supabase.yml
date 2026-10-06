@@ -4,8 +4,8 @@ name: Supabase
 # Needs (Settings → Secrets and variables → Actions): secrets SUPABASE_ACCESS_TOKEN
 # (supabase.com → Account → Access Tokens), SUPABASE_DB_PASSWORD, and SUPABASE_PROJECT_REF
 # (variable or secret). The license signing key lives in Supabase itself (Edge Functions → Secrets),
-# as do the store's webhook secret and product ids (LEMONSQUEEZY_WEBHOOK_SECRET, LEMONSQUEEZY_PRODUCT_ID, both
-# required), the reports' IP-hash salt and forwarding secret (REPORT_SALT, REPORT_FORWARD_SECRET), and the
+# as do the store's settings (PADDLE_WEBHOOK_SECRET and PADDLE_PRODUCT_ID required, PADDLE_API_KEY and
+# PADDLE_ENV), the reports' IP-hash salt and forwarding secret (REPORT_SALT, REPORT_FORWARD_SECRET), and the
 # optional ALLOW_TEST_LICENSES. See README.
 on:
   push:
@@ -36,7 +36,7 @@ jobs:
       - if: env.SUPABASE_ACCESS_TOKEN != '' && env.PROJECT_REF != ''
         run: supabase db push
       # The app calls them without a login (the signed license, or the one-time code, is the proof), so no JWT check.
-      # ls-webhook is called by Lemon Squeezy, which proves itself with X-Signature instead.
+      # paddle-webhook is called by Paddle, which proves itself with Paddle-Signature instead.
       # license-refresh is the app's daily check of the license it holds (removed, refunded or revoked turns Pro off).
       # report takes problem reports and inquiries from anyone (honeypot and a rate limit instead of a login).
       - if: env.SUPABASE_ACCESS_TOKEN != '' && env.PROJECT_REF != ''
@@ -44,5 +44,5 @@ jobs:
           supabase functions deploy license-refresh --no-verify-jwt --project-ref "$PROJECT_REF"
           supabase functions deploy license-activate --no-verify-jwt --project-ref "$PROJECT_REF"
           supabase functions deploy license-deactivate --no-verify-jwt --project-ref "$PROJECT_REF"
-          supabase functions deploy ls-webhook --no-verify-jwt --project-ref "$PROJECT_REF"
+          supabase functions deploy paddle-webhook --no-verify-jwt --project-ref "$PROJECT_REF"
           supabase functions deploy report --no-verify-jwt --project-ref "$PROJECT_REF"

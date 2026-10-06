@@ -55,11 +55,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <h2>Contact</h2>
                 <Link href="/contact">Report a problem</Link>
                 <Link href="/contact?topic=question">Ask a question</Link>
+                <a href={`mailto:${SITE.contact}`}>Email us</a>
               </div>
             </nav>
           </div>
           <p className="bottom-legal">
-            © {new Date().getFullYear()} {SITE.name}
+            © {new Date().getFullYear()} {SITE.seller} · {SITE.name}
           </p>
         </footer>
       </body>

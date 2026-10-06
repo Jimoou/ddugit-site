@@ -1,18 +1,33 @@
-// The store's checkout link for a signed-in buyer. Lemon Squeezy reads
-// `checkout[email]` to fill in the email field and hands `checkout[custom][…]`
-// back to the webhook as `meta.custom_data`, which ls-webhook uses to put the
-// license on this ddugit.com account even if they pay with another email.
+// Paddle checkout: which environment the site's public settings belong to, whether they fit
+// together, and what the overlay checkout opens with. Paddle.js reads `customer.email` to fill
+// in (and, with `allowLogout: false`, fix) the email, and hands `customData` back to the
+// webhook (`data.custom_data`), which puts the license on that ddugit.com account.
 
-/** `base` (the store's checkout link) for `email`; `base` as is without one or when it isn't a URL. */
-export function checkoutUrl(base: string, email?: string | null): string {
-  if (!email) return base;
-  let url: URL;
-  try {
-    url = new URL(base);
-  } catch {
-    return base;
-  }
-  url.searchParams.set("checkout[email]", email);
-  url.searchParams.set("checkout[custom][email]", email);
-  return url.toString();
+export type PaddleEnv = "sandbox" | "production";
+
+/** NEXT_PUBLIC_PADDLE_ENV: "sandbox", otherwise live. */
+export const paddleEnv = (raw: string | null | undefined): PaddleEnv =>
+  raw?.trim().toLowerCase() === "sandbox" ? "sandbox" : "production";
+
+/** A sandbox token is `test_…` and a live one `live_…`: a mix-up would open a checkout that can't load. */
+export function storeReady({
+  token,
+  priceId,
+  environment,
+}: {
+  token: string;
+  priceId: string;
+  environment: PaddleEnv;
+}) {
+  const prefix = environment === "sandbox" ? "test_" : "live_";
+  return token.startsWith(prefix) && token.length > prefix.length && /^pri_[a-z0-9]+$/i.test(priceId);
+}
+
+/** `Paddle.Checkout.open`'s argument: one copy of Pro, for `email` (the buyer's login) when there is one. */
+export function checkoutRequest(priceId: string, email: string | null, successUrl: string) {
+  return {
+    items: [{ priceId, quantity: 1 }],
+    ...(email ? { customer: { email }, customData: { email } } : {}),
+    settings: { successUrl, allowLogout: !email },
+  };
 }
