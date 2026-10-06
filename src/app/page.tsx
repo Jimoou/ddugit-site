@@ -1,7 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Icon, type IconName } from "@/components/Icon";
 import { Screen } from "@/components/Screen";
+import { jsonLd, pageMeta, productData } from "@/lib/seo";
 import { DEVICES, PRO_PRICE, SITE, usd } from "@/site";
+
+export const metadata: Metadata = pageMeta("/");
 
 type Feature = { icon: IconName; name: string; body: string };
 
@@ -90,6 +94,7 @@ function Features({ items }: { items: Feature[] }) {
 export default function Home() {
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(productData())} />
       <section className="hero">
         <p className="pill">Git client for macOS and Windows</p>
         <h1>{SITE.tagline}</h1>

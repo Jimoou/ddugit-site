@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import { DEVICES, SITE } from "@/site";
 
-export const metadata: Metadata = { title: "Terms" };
+export const metadata: Metadata = pageMeta("/terms");
 
 export default function Terms() {
   return (

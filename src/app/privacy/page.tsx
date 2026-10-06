@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import { SITE } from "@/site";
 
-export const metadata: Metadata = { title: "Privacy" };
+export const metadata: Metadata = pageMeta("/privacy");
 
 export default function Privacy() {
   return (

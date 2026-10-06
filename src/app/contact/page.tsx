@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import { type ReportKind, ReportForm } from "@/components/ReportForm";
 
-export const metadata: Metadata = {
-  title: "Contact",
-  description: "Report a problem with ddugit or ask a question, including about site licenses.",
-};
+export const metadata: Metadata = pageMeta("/contact");
 
 /** Ready-made starts for links elsewhere on the site (`/contact?topic=…`). */
 const TOPICS: Record<string, { kind: ReportKind; message: string }> = {
