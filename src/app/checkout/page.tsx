@@ -1,26 +1,36 @@
 import type { Metadata } from "next";
-import { NOINDEX } from "@/lib/seo";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { AuthSplit } from "@/components/AuthSplit";
-import { checkoutUrl } from "@/lib/checkout";
+import { PaddleCheckout } from "@/components/PaddleCheckout";
+import { NOINDEX } from "@/lib/seo";
 import { hasSupabase } from "@/lib/supabase/config";
 import { supabaseServer } from "@/lib/supabase/server";
-import { CHECKOUT_URL, PRO_PRICE, usd } from "@/site";
+import { PADDLE, PRO_PRICE, STORE_OPEN, usd } from "@/site";
 
 export const metadata: Metadata = { title: "Buy ddugit Pro", robots: NOINDEX };
 
 /**
- * The pricing page's Pro button: sign in first (so the license lands on this
- * ddugit.com account), then on to the store's checkout with that email.
+ * The pricing page's Pro button: sign in first (so the license lands on this ddugit.com
+ * account), then Paddle's checkout with that email. `?guest` checks out without signing in
+ * (the license goes to the email paid with). This is also the Paddle "default payment link":
+ * `?_ptxn=txn_…` opens that transaction for anyone.
  */
-export default async function Checkout() {
-  await connection(); // per visitor: who is signed in decides where this goes
-  if (!CHECKOUT_URL) redirect("/pricing");
-  if (!hasSupabase()) redirect(CHECKOUT_URL);
+export default async function Checkout({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
+  await connection(); // per visitor: who is signed in decides what opens
+  if (!STORE_OPEN) redirect("/pricing");
+  const query = await searchParams;
+  const transaction = /^txn_[a-z0-9]+$/i.test(query._ptxn ?? "");
+  const checkout = (email: string | null) => <PaddleCheckout {...PADDLE} email={email} transaction={transaction} />;
+  if (transaction || query.guest !== undefined || !hasSupabase()) return checkout(null);
+
   const user = (await (await supabaseServer()).auth.getUser()).data.user;
-  if (user?.email) redirect(checkoutUrl(CHECKOUT_URL, user.email));
+  if (user?.email) return checkout(user.email);
 
   return (
     <AuthSplit
@@ -31,8 +41,8 @@ export default async function Checkout() {
       configured
       aside={
         <>
-          Rather not? <a href={CHECKOUT_URL}>Check out without signing in</a>: the license goes to the email you pay
-          with, and you sign in with that email later. <Link href="/pricing">Back to pricing</Link>
+          Rather not? <Link href="/checkout?guest">Check out without signing in</Link>: the license goes to the email
+          you pay with, and you sign in with that email later. <Link href="/pricing">Back to pricing</Link>
         </>
       }
     />

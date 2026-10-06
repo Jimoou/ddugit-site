@@ -1,11 +1,16 @@
 // Site-wide facts in one place: the product's name, price and where the
 // download manifest lives (written by the app's release workflow).
 
+import { CONTACT_EMAIL } from "../supabase/functions/_shared/contact.ts";
+import { paddleEnv, storeReady } from "./lib/checkout.ts";
+
 export const SITE = {
   name: "ddugit",
   tagline: "Your Git history, as a graph you can work on.",
   url: "https://ddugit.com",
-  contact: "support@ddugit.com",
+  contact: CONTACT_EMAIL,
+  /** Who sells ddugit: the legal name on the Paddle account (an individual), named in the terms. */
+  seller: "Kim Jiwoon",
 };
 
 /** Pro: one payment in US dollars, used forever with every future update, on up to `DEVICES` devices. */
@@ -21,13 +26,21 @@ export { DEVICES_PER_COPY as DEVICES } from "../supabase/functions/_shared/store
 export const DOWNLOADS_URL = process.env.NEXT_PUBLIC_DOWNLOADS_URL ?? "";
 
 /**
- * Lemon Squeezy's checkout link for Pro (Products → Share), e.g.
- * `https://<store>.lemonsqueezy.com/buy/<variant>`. Empty until the store is live:
- * the pricing page then says "Available soon".
+ * Paddle Billing, which sells Pro (merchant of record). Public values only, from Netlify's
+ * environment: the client-side token (Developer tools → Authentication; `test_…` in the sandbox,
+ * `live_…` live), the Pro price (`pri_…`) and which environment they belong to.
+ * Until all three fit together the pricing page says "Available soon".
  */
-export const CHECKOUT_URL = process.env.NEXT_PUBLIC_LS_CHECKOUT_URL?.trim() ?? "";
+export const PADDLE = {
+  token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN?.trim() ?? "",
+  priceId: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID?.trim() ?? "",
+  environment: paddleEnv(process.env.NEXT_PUBLIC_PADDLE_ENV),
+};
 
-/** Prices are in US dollars (the store, Lemon Squeezy, charges in USD). */
+/** Whether Pro can be bought. */
+export const STORE_OPEN = storeReady(PADDLE);
+
+/** Prices are in US dollars (the Paddle price is set in USD). */
 export const usd = (n: number) => `$${n.toLocaleString("en-US")}`;
 
 /** Login buttons on the account page, in order (each must be enabled in Supabase → Authentication → Providers). */

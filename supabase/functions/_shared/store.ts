@@ -1,26 +1,42 @@
-// Lemon Squeezy (the store) → `licenses` rows. Pure helpers for the ls-webhook function:
-// the signature check and what each order event does to the table. WebCrypto only, so it
-// runs in Supabase Edge Functions (Deno) and in Node tests alike.
+// Paddle Billing (the store) → `licenses` rows. Pure helpers for the paddle-webhook function:
+// the signature check and what each event does to the table. WebCrypto only, so it runs in
+// Supabase Edge Functions (Deno) and in Node tests alike.
 //
-// A webhook is a POST of JSON with `X-Signature`: the lowercase hex HMAC-SHA256 of the
-// raw body under the webhook's signing secret, and `X-Event-Name`, e.g. `order_created`:
-//   { meta: { event_name, test_mode, custom_data? },
-//     data: { type: "orders", id, attributes: { user_name, user_email, status, refunded,
-//             first_order_item: { product_id, variant_id, quantity, … }, … } } }
+// A notification is a POST of JSON with `Paddle-Signature: ts=<unix seconds>;h1=<hex>`, where
+// h1 is the HMAC-SHA256 of `<ts>:<raw body>` under the destination's secret key (two h1 while a
+// secret is being rotated). The parts read here:
+//   { event_id, event_type: "transaction.completed",
+//     data: { id: "txn_…", status, customer_id, custom_data, items: [{ quantity, price: { product_id } }] } }
+//   { event_type: "adjustment.created" | "adjustment.updated",
+//     data: { id: "adj_…", action: "refund" | "chargeback" | …, type: "full" | "partial", status, transaction_id } }
 
 import { isEmail } from "./email.ts";
 
 /** Devices one Pro purchase covers (`site.ts`'s DEVICES); `quantity` copies cover that many times more. */
 export const DEVICES_PER_COPY = 3;
 
+/** How old a signed notification may be. Paddle signs every attempt afresh, so this only bounds replays. */
+export const SIGNATURE_MAX_AGE_S = 5 * 60;
+
 const hexBytes = (hex: string) => Uint8Array.from(hex.match(/../g) ?? [], (h) => parseInt(h, 16));
 
 /**
- * Whether `signature` (the `X-Signature` header) is the HMAC-SHA256 of `body` (the raw
- * request bytes) under `secret`. `crypto.subtle.verify` compares in constant time.
+ * Whether `header` (the `Paddle-Signature` header) signs `body` (the raw request bytes) under
+ * `secret`, at most `SIGNATURE_MAX_AGE_S` from `now` (unix seconds). `crypto.subtle.verify`
+ * compares in constant time.
  */
-export async function verifySignature(secret: string, body: BufferSource, signature: string | null): Promise<boolean> {
-  if (!secret || !signature || !/^[0-9a-f]{64}$/i.test(signature.trim())) return false;
+export async function verifySignature(
+  secret: string,
+  body: Uint8Array,
+  header: string | null,
+  now = Math.floor(Date.now() / 1000),
+): Promise<boolean> {
+  if (!secret || !header) return false;
+  const parts = header.split(";").map((p) => p.trim().split("="));
+  const ts = parts.find(([k]) => k === "ts")?.[1] ?? "";
+  const sigs = parts.filter(([k, v]) => k === "h1" && /^[0-9a-f]{64}$/i.test(v ?? "")).map(([, v]) => v);
+  if (!/^\d{1,12}$/.test(ts) || !sigs.length || Math.abs(now - Number(ts)) > SIGNATURE_MAX_AGE_S) return false;
+
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
@@ -28,7 +44,12 @@ export async function verifySignature(secret: string, body: BufferSource, signat
     false,
     ["verify"],
   );
-  return crypto.subtle.verify("HMAC", key, hexBytes(signature.trim()), body);
+  const prefix = new TextEncoder().encode(`${ts}:`);
+  const signed = new Uint8Array(prefix.length + body.length);
+  signed.set(prefix);
+  signed.set(body, prefix.length);
+  for (const sig of sigs) if (await crypto.subtle.verify("HMAC", key, hexBytes(sig), signed)) return true;
+  return false;
 }
 
 /** A new license id: `lic_` + 9 random bytes, base64url (as ddugit `scripts/license.mjs`). */
@@ -39,19 +60,20 @@ export function newLicenseId(): string {
     .replace(/\//g, "_")}`;
 }
 
-/** The parts of a webhook the function reads; everything else is ignored. */
+/** The parts of a notification the function reads; everything else is ignored. */
 export interface StoreEvent {
-  meta?: { event_name?: string; test_mode?: boolean; custom_data?: Record<string, unknown> | null };
+  event_id?: string;
+  event_type?: string;
   data?: {
+    id?: string;
+    status?: string;
+    customer_id?: string | null;
+    custom_data?: Record<string, unknown> | null;
+    items?: { quantity?: number | null; price?: { product_id?: string | null } | null }[] | null;
+    // adjustments
+    action?: string;
     type?: string;
-    id?: string | number;
-    attributes?: {
-      user_name?: string | null;
-      user_email?: string | null;
-      status?: string;
-      refunded?: boolean;
-      first_order_item?: { product_id?: string | number; quantity?: number | null } | null;
-    };
+    transaction_id?: string;
   };
 }
 
@@ -61,7 +83,7 @@ export interface PurchaseRow {
   name: string;
   kind: "personal";
   plan: "lifetime";
-  status: "active" | "refunded";
+  status: "active";
   seats: 1;
   max_devices: number;
   /** Lifetime licenses are signed per device at activation: no stored text. */
@@ -71,18 +93,23 @@ export interface PurchaseRow {
 }
 
 /**
- * What an event does to `licenses`:
- * - `create`: insert the row unless the order already has one (retries, or a refund that came first);
- * - `refund`: mark the order's row refunded, inserting it as refunded when it isn't there yet;
- * - `ignore`: answer 200 and change nothing (other events, unpaid orders, other products), with why.
+ * What a notification does:
+ * - `create`: a paid Pro transaction. Insert its row unless it already has one (retries), then
+ *   apply a refund recorded for it before it arrived (`store_refunds`: deliveries can come out of order).
+ *   `email` is null when the site didn't pass the buyer's login; the function then asks Paddle
+ *   for the customer's email (`customer`).
+ * - `refund`: an approved full refund or chargeback of transaction `order`. Record it, and mark the order's row refunded.
+ * - `ignore`: answer 200 and change nothing (other events, other products, partial refunds), with why.
  */
 export type Decision =
-  | { action: "create"; row: PurchaseRow }
-  | { action: "refund"; row: PurchaseRow }
+  | { action: "create"; order: string; customer: string | null; email: string | null; copies: number }
+  | { action: "refund"; order: string }
   | { action: "ignore"; reason: string };
 
+export type Purchase = Extract<Decision, { action: "create" }>;
+
 /**
- * LEMONSQUEEZY_PRODUCT_ID: the store products that are ddugit Pro, comma-separated.
+ * PADDLE_PRODUCT_ID: the Paddle products (`pro_…`) that are ddugit Pro, comma-separated.
  * Required: with none, the webhook refuses to make licenses (any product in the store would).
  */
 export const productIds = (raw: string | null | undefined) =>
@@ -91,43 +118,52 @@ export const productIds = (raw: string | null | undefined) =>
     .map((id) => id.trim())
     .filter(Boolean);
 
-/**
- * The decision for one webhook. Orders for products not in `products` (`productIds` of LEMONSQUEEZY_PRODUCT_ID)
- * are ignored, and with an empty list every order is. The license goes to `custom_data.email`
- * when the site passed one at checkout (the buyer's ddugit.com login), else to the email they paid with.
- */
+/** Adjustments that take a license back once approved. */
+const TAKE_BACK = new Set(["refund", "chargeback"]);
+
+/** The decision for one notification. Transactions with no item in `products` are ignored, and with an empty list every one is. */
 export function decide(event: StoreEvent, products: readonly string[]): Decision {
-  const name = event.meta?.event_name ?? "";
-  if (name !== "order_created" && name !== "order_refunded") return { action: "ignore", reason: `event ${name}` };
-  const order = event.data;
-  const a = order?.attributes;
-  if (order?.type !== "orders" || order.id === undefined || !a) return { action: "ignore", reason: "not an order" };
+  const type = event.event_type ?? "";
+  const d = event.data;
+  if (!d) return { action: "ignore", reason: "no data" };
 
-  const item = a.first_order_item;
-  if (!products.includes(String(item?.product_id ?? ""))) return { action: "ignore", reason: "another product" };
+  if (type === "adjustment.created" || type === "adjustment.updated") {
+    if (!TAKE_BACK.has(d.action ?? "")) return { action: "ignore", reason: `adjustment ${d.action}` };
+    if (d.status !== "approved") return { action: "ignore", reason: `adjustment ${d.status}` };
+    // Only a full refund takes the license back; a partial one (e.g. tax) leaves it.
+    if (d.type === "partial") return { action: "ignore", reason: "partial adjustment" };
+    if (!d.transaction_id) return { action: "ignore", reason: "no transaction" };
+    return { action: "refund", order: d.transaction_id };
+  }
 
-  const custom = event.meta?.custom_data?.email;
-  const email = (typeof custom === "string" && isEmail(custom.trim()) ? custom : (a.user_email ?? "")).trim();
-  if (!isEmail(email)) return { action: "ignore", reason: "no buyer email" };
+  if (type !== "transaction.completed") return { action: "ignore", reason: `event ${type}` };
+  if (!d.id) return { action: "ignore", reason: "no transaction id" };
+  const ours = (d.items ?? []).filter((i) => products.includes(i.price?.product_id ?? ""));
+  if (!ours.length) return { action: "ignore", reason: "another product" };
 
-  // Only a full refund takes the license back; a partial one (e.g. tax) leaves it.
-  const refunded = a.status === "refunded";
-  if (name === "order_created" && a.status !== "paid" && !refunded)
-    return { action: "ignore", reason: `order ${a.status ?? "without status"}` };
-  if (name === "order_refunded" && !refunded) return { action: "ignore", reason: `order ${a.status}` };
+  const copies = ours.reduce((n, i) => n + Math.max(1, Math.floor(Number(i.quantity) || 1)), 0);
+  const custom = d.custom_data?.email;
+  const email = typeof custom === "string" && isEmail(custom.trim()) ? custom.trim() : null;
+  if (!email && !d.customer_id) return { action: "ignore", reason: "no buyer email" };
+  return { action: "create", order: d.id, customer: d.customer_id ?? null, email, copies };
+}
 
-  const copies = Math.max(1, Math.floor(Number(item?.quantity) || 1));
-  const row: PurchaseRow = {
+/** The `licenses` row for a paid transaction, once its buyer's email is known. */
+export function purchaseRow(purchase: Purchase, email: string, name: string | null, test: boolean): PurchaseRow {
+  return {
     email,
-    name: a.user_name?.trim() || email,
+    name: name?.trim() || email,
     kind: "personal",
     plan: "lifetime",
-    status: refunded ? "refunded" : "active",
+    status: "active",
     seats: 1,
-    max_devices: copies * DEVICES_PER_COPY,
+    max_devices: purchase.copies * DEVICES_PER_COPY,
     text: null,
-    store_order_id: String(order.id),
-    store_test: event.meta?.test_mode === true,
+    store_order_id: purchase.order,
+    store_test: test,
   };
-  return { action: refunded ? "refund" : "create", row };
 }
+
+/** Paddle's API for `PADDLE_ENV` ("sandbox", or anything else for live). */
+export const paddleApi = (environment: string) =>
+  environment === "sandbox" ? "https://sandbox-api.paddle.com" : "https://api.paddle.com";

@@ -24,15 +24,17 @@ npm run build
 
 ## 서버 환경 변수 한눈에
 
-| 어디             | 이름                                                        | 필수   | 설명                                                                     |
-| ---------------- | ----------------------------------------------------------- | ------ | ------------------------------------------------------------------------ |
-| Netlify          | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 예     | 공개 값                                                                  |
-| Netlify          | `REPORT_FORWARD_SECRET`                                     | 예     | Supabase와 같은 값. 없으면 `/api/report` 503                             |
-| Netlify          | `ALLOW_TEST_LICENSES`                                       | 아니오 | `true`면 `/activate`가 테스트 주문 라이선스도 고른다. 테스트 구매할 때만 |
-| Supabase Secrets | `DDUGIT_LICENSE_PRIVATE_KEY`, `DDUGIT_LICENSE_PUBKEY`       | 예     | 라이선스 서명·확인                                                       |
-| Supabase Secrets | `LEMONSQUEEZY_WEBHOOK_SECRET`, `LEMONSQUEEZY_PRODUCT_ID`    | 예     | 상품 id 없으면 웹훅이 라이선스를 만들지 않는다(500)                      |
-| Supabase Secrets | `REPORT_SALT`, `REPORT_FORWARD_SECRET`                      | 예     | 없으면 `report` 503                                                      |
-| Supabase Secrets | `ALLOW_TEST_LICENSES`                                       | 아니오 | `true`면 테스트 주문 라이선스를 활성화·유지한다. 평소에는 비워 둔다      |
+| 어디             | 이름                                                                                       | 필수    | 설명                                                                                                          |
+| ---------------- | ------------------------------------------------------------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------- |
+| Netlify          | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`                                | 예      | 공개 값                                                                                                       |
+| Netlify          | `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`, `NEXT_PUBLIC_PADDLE_PRICE_ID`, `NEXT_PUBLIC_PADDLE_ENV` | 판매 시 | 공개 값. 셋이 맞아야(`test_` 토큰은 `sandbox`, `live_`는 그 외, 가격은 `pri_…`) 구매 버튼이 열린다            |
+| Netlify          | `REPORT_FORWARD_SECRET`                                                                    | 예      | Supabase와 같은 값. 없으면 `/api/report` 503                                                                  |
+| Netlify          | `ALLOW_TEST_LICENSES`                                                                      | 아니오  | `true`면 `/activate`가 테스트 주문 라이선스도 고른다. 테스트 구매할 때만                                      |
+| Supabase Secrets | `DDUGIT_LICENSE_PRIVATE_KEY`, `DDUGIT_LICENSE_PUBKEY`                                      | 예      | 라이선스 서명·확인                                                                                            |
+| Supabase Secrets | `PADDLE_WEBHOOK_SECRET`, `PADDLE_PRODUCT_ID`                                               | 예      | 상품 id(`pro_…`) 없으면 웹훅이 라이선스를 만들지 않는다(500)                                                  |
+| Supabase Secrets | `PADDLE_API_KEY`, `PADDLE_ENV`                                                             | 예      | API 키는 로그인 없이 산 사람의 이메일 조회용(고객 읽기 권한). `PADDLE_ENV=sandbox`면 sandbox API·`store_test` |
+| Supabase Secrets | `REPORT_SALT`, `REPORT_FORWARD_SECRET`                                                     | 예      | 없으면 `report` 503                                                                                           |
+| Supabase Secrets | `ALLOW_TEST_LICENSES`                                                                      | 아니오  | `true`면 테스트 주문 라이선스를 활성화·유지한다. 평소에는 비워 둔다                                           |
 
 `https://ddugit.com/api/status`가 Netlify 쪽 값이 있는지(이름만) 보여 준다.
 
@@ -44,12 +46,12 @@ npm run build
 
 - 판매: 평생 라이선스 하나(`site.ts`의 `PRO_PRICE`, 한 번 결제, 이후 업데이트 모두 포함), 라이선스당 기기 3대(`licenses.max_devices`). 사이트 라이선스(`kind = 'site'`)는 기기 제한이 없다
 - `supabase/migrations/`: `licenses`, `activations`, `devices` 테이블. 로그인한 사람은 자기 이메일로 산 라이선스와 그 기기만 읽고, 기기는 지울 수만 있다(RLS). 기기 추가는 함수(service role)만, 한도는 트리거(`devices_within_limit`)가 지킨다. API 역할의 권한은 사이트가 쓰는 것만 남긴다(`20261008000000_license_grants.sql`: authenticated는 licenses select, devices select·delete, activations의 네 열 insert만, anon은 없음)
-- 새 마이그레이션 이름은 이미 적용된 것보다 뒤여야 한다(`supabase db push`가 앞선 것을 거부한다). 지금 마지막은 `20261008000000`이므로 실제 날짜가 그보다 앞이면 그 뒤 번호를 손으로 붙인다
+- 새 마이그레이션 이름은 이미 적용된 것보다 뒤여야 한다(`supabase db push`가 앞선 것을 거부한다). 지금 마지막은 `20261009000000`이므로 실제 날짜가 그보다 앞이면 그 뒤 번호를 손으로 붙인다
 - `supabase/functions/license-activate`: `/activate`가 준 1회용 코드 + 앱의 기기 id → 라이선스가 쓸 수 있는지 먼저 확인(아래 규칙) → 기기 등록 후 그 기기용으로 서명한 라이선스(`ddugit.com/api/license/activate`)
 - `supabase/functions/license-deactivate`: 앱의 "이 기기 제거". 서명된 라이선스 + 기기 id → 기기 행 삭제(`ddugit.com/api/license/deactivate`)
 - `supabase/functions/license-refresh`: 앱이 시작할 때·하루마다 갖고 있는 라이선스를 확인한다(`ddugit.com/api/license/refresh`). 쓸 수 있으면 그대로(사이트 라이선스는 저장된 최신 텍스트), 못 쓰면 `expired`, 기기에 묶인 라이선스의 행이 없거나 그 기기가 지워졌으면 `removed`(앱이 Pro를 끈다), 기기에 안 묶인 라이선스의 행이 없으면 `unknown`
 - 쓸 수 있는 라이선스 규칙(하나, `_shared/license.ts`의 `unusable`): 종류와 상관없이 `status = 'active'`이고, 스토어 테스트 주문(`store_test`)은 `ALLOW_TEST_LICENSES=true`일 때만. license-activate·license-refresh와 사이트의 `/activate`가 같은 규칙을 쓴다. 구독(월·연)은 판 적이 없어 코드에서 지웠다(`paid_through` 등 열은 남아 있지만 쓰지 않는다)
-- `supabase/functions/ls-webhook`: Lemon Squeezy 웹훅. `order_created`(결제 완료) → 평생 라이선스 행(`store_order_id` = 주문 id, 기기 3대 × 수량), `order_refunded`(전액 환불) → `status = 'refunded'`(앱은 다음 확인 때 Pro를 끈다). 부분 환불·다른 이벤트·다른 상품은 200으로 무시. 같은 주문은 한 행(재전송·순서 바뀜에도 안전). 테스트 모드 주문은 `store_test = true`. `LEMONSQUEEZY_PRODUCT_ID`가 없으면 아무 라이선스도 만들지 않고 500(로그: `not configured: LEMONSQUEEZY_PRODUCT_ID is not set`)을 돌려준다. 스토어가 다시 보내므로 설정한 뒤 들어온 주문은 처리된다. 순수 로직은 `_shared/store.ts`
+- `supabase/functions/paddle-webhook`: Paddle Billing 웹훅. `transaction.completed` → 평생 라이선스 행(`store_order_id` = 거래 id `txn_…`, 기기 3대 × 수량), 승인된 전액 환불·차지백(`adjustment.created`/`updated`, `action` refund/chargeback, `status` approved, `type`이 partial이 아님) → `store_refunds`에 기록하고 `status = 'refunded'`(앱은 다음 확인 때 Pro를 끈다). 환불이 거래보다 먼저 와도 거래를 넣은 뒤 `store_refunds`를 보고 바로 환불 처리한다. 부분 환불·다른 이벤트·다른 상품은 200으로 무시. 서명은 `Paddle-Signature`(`ts:본문`의 HMAC-SHA256, 5분 넘은 것은 거부). 라이선스는 `custom_data.email`(체크아웃 때 넘긴 로그인 이메일)로, 없으면 Paddle API로 고객 이메일을 조회한다. `PADDLE_PRODUCT_ID`가 없으면 아무 라이선스도 만들지 않고 500. 순수 로직은 `_shared/store.ts`
 - `supabase/functions/_shared/license.ts`: 라이선스 형식(앱의 `license.rs`와 같음)과 사용 가능 규칙. 함수 공통은 `_shared/http.ts`(`json`, `env`, `handle`: POST만, 빠진 설정은 500 "not configured")와 `_shared/db.ts`(`serviceDb`, 서명 키). Next도 `_shared`의 순수 모듈(`license.ts`, `report.ts`, `email.ts`)을 직접 가져온다(`tsconfig`의 `allowImportingTsExtensions`). `npm test`
 - 배포: `main`에 `supabase/`가 바뀌면 `.github/workflows/supabase.yml`이 마이그레이션과 함수를 올린다
 
@@ -57,15 +59,17 @@ npm run build
 
 1. 이 저장소 Secrets: `SUPABASE_ACCESS_TOKEN`(supabase.com → Account → Access Tokens), `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`
 2. Supabase → Edge Functions → Secrets: `DDUGIT_LICENSE_PRIVATE_KEY`(ddugit `scripts/license.mjs keygen`이 만든 PEM 전체), `DDUGIT_LICENSE_PUBKEY`(같은 키의 공개키, ddugit 저장소 Variables와 같은 값)
-3. 판매(Lemon Squeezy):
-   1. 상품 하나: Single payment, `$29`(`site.ts`의 `PRO_PRICE`와 같게). 수량 선택을 켜면 한 주문이 기기 3대 × 수량이 된다
-   2. Settings → Webhooks → 추가: URL `https://<project-ref>.supabase.co/functions/v1/ls-webhook`, 이벤트 `order_created`·`order_refunded`, Signing secret은 임의의 긴 값
-   3. Supabase → Edge Functions → Secrets: `LEMONSQUEEZY_WEBHOOK_SECRET` = 위 Signing secret, **필수** `LEMONSQUEEZY_PRODUCT_ID` = Pro 상품 id(여러 개면 쉼표로, 예: `123456,123457`). 없으면 웹훅이 라이선스를 만들지 않는다(500). 다른 상품 주문은 무시
-   4. 상품 → Share → 체크아웃 링크(`https://<store>.lemonsqueezy.com/buy/<variant-uuid>`)를 Netlify 환경 변수 `NEXT_PUBLIC_LS_CHECKOUT_URL`에 넣고 다시 배포한다. 없으면 가격 페이지 버튼은 "Available soon"
-   5. 상품의 Confirmation modal → Button link(결제 후 이동)를 `https://ddugit.com/thanks`로
-   6. 테스트 모드로 끝까지 사 보기: Supabase Secrets와 Netlify 환경 변수 **둘 다**에 `ALLOW_TEST_LICENSES=true`를 넣는다(없으면 테스트 주문은 계정 페이지에 "Test order"로 보이기만 하고 `/activate`가 고르지 않으며, license-activate는 "This license comes from a test purchase…"로 거절, license-refresh는 `expired`). 사 보고 앱에서 활성화해 본 뒤 두 곳에서 **지우고**(Netlify는 다시 배포), 테스트 라이선스는 지우지 말고 끈다: `update public.licenses set status = 'revoked' where store_test;`. 그러면 그 라이선스를 받은 앱은 다음 확인 때 Pro를 끈다(행을 지워도 기기에 묶인 라이선스는 `removed`로 꺼지지만, 기록이 남는 쪽이 낫다)
+3. 판매(Paddle Billing, 판매자: 개인 `site.ts`의 `SITE.seller`). 먼저 sandbox(sandbox-vendors.paddle.com)에서 끝까지 해 보고, live 계정(vendors.paddle.com)에서 같은 순서로 한 번 더:
+   1. Checkout → Website approval: `ddugit.com`을 추가하고 심사를 받는다(약관·개인정보·가격·환불 14일·판매자 이름·연락처가 사이트에 있어야 한다)
+   2. Catalog → Products: "ddugit Pro"(세금 분류 Standard digital goods), Price: One-time `$29 USD`(`site.ts`의 `PRO_PRICE`와 같게)
+   3. Checkout → Checkout settings → Default payment link: `https://ddugit.com/checkout`
+   4. Developer tools → Authentication: Client-side token → Netlify `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`. API key(Customers 읽기) → Supabase `PADDLE_API_KEY`
+   5. Developer tools → Notifications → New destination: URL `https://<project-ref>.supabase.co/functions/v1/paddle-webhook`, 이벤트 `transaction.completed`·`adjustment.created`·`adjustment.updated`. 만든 뒤 보이는 Secret key → Supabase `PADDLE_WEBHOOK_SECRET`
+   6. Supabase Secrets: **필수** `PADDLE_PRODUCT_ID` = 상품 id(`pro_…`, 여러 개면 쉼표), `PADDLE_ENV` = `sandbox`(sandbox일 때만, live는 비우거나 `production`)
+   7. Netlify: `NEXT_PUBLIC_PADDLE_PRICE_ID` = 가격 id(`pri_…`), `NEXT_PUBLIC_PADDLE_ENV` = `sandbox` 또는 `production`, 다시 배포. 토큰과 환경이 안 맞으면 가격 페이지 버튼은 "Available soon"
+   8. sandbox로 끝까지 사 보기: 테스트 카드 `4242 4242 4242 4242`(만료일은 미래, CVC `100`). Supabase Secrets와 Netlify **둘 다**에 `ALLOW_TEST_LICENSES=true`를 넣어야 sandbox 라이선스(`store_test`)를 활성화할 수 있다. 사 보고, 앱에서 활성화하고, Paddle에서 환불해 Pro가 꺼지는 것까지 본 뒤 두 곳에서 **지우고**(Netlify는 다시 배포) 테스트 라이선스는 끈다: `update public.licenses set status = 'revoked' where store_test;`
 
-구매 흐름: 가격 페이지 → `/checkout`(로그인 안 했으면 로그인 후 돌아옴) → Lemon Squeezy 체크아웃(`checkout[email]`·`checkout[custom][email]`에 로그인 이메일) → 웹훅이 그 이메일로 라이선스 행을 만든다 → `/thanks` → 앱의 설정 → License → "Sign in with ddugit.com". 결제 이메일을 바꿔도 라이선스는 로그인 이메일(`custom_data.email`)로 간다
+구매 흐름: 가격 페이지 → `/checkout`(로그인 안 했으면 로그인 후 돌아옴, `?guest`는 로그인 없이) → 같은 페이지에서 Paddle.js 오버레이 체크아웃(로그인 이메일을 `customer.email`로 고정하고 `customData.email`로도 넘김) → 웹훅이 그 이메일로 라이선스 행을 만든다 → `/thanks` → 앱의 설정 → License → "Sign in with ddugit.com". `/checkout?_ptxn=txn_…`(Paddle 결제 링크)는 로그인 없이 그 거래를 연다
 
 ## 문제 신고·문의 (Supabase)
 

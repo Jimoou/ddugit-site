@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
-import { CHECKOUT_URL, DEVICES, PRO_PRICE, usd } from "@/site";
+import { DEVICES, PRO_PRICE, STORE_OPEN, usd } from "@/site";
 
 export const metadata: Metadata = pageMeta("/pricing");
 
@@ -66,6 +66,14 @@ const FAQ = [
     a: `Yes, one license per person, on up to ${DEVICES} of their devices. For a larger team or an entire organization, a site license is usually simpler.`,
   },
   {
+    q: "Can I get a refund?",
+    a: "Yes. Ask within 14 days of payment and you get the full amount back, no questions asked. Pro turns off on your devices once the refund goes through.",
+  },
+  {
+    q: "Who handles the payment?",
+    a: "Paddle, our reseller and merchant of record. Paddle processes the payment, sends the receipt and handles sales tax and VAT. ddugit never sees your card details.",
+  },
+  {
     q: "Are taxes included?",
     a: "Prices are in US dollars. Sales tax or VAT is added at checkout where it applies.",
   },
@@ -102,7 +110,7 @@ export default function Pricing() {
     <div className="page">
       <header className="page-head center">
         <p className="eyebrow">Pricing</p>
-        <h1>Free for everyday Git. Pro for teams.</h1>
+        <h1>Free for everyday Git. Pro, paid once.</h1>
         <p className="lead">
           Free has no time limit. Pro is a single payment: use it forever, with every future update included.
         </p>
@@ -138,7 +146,7 @@ export default function Pricing() {
             <span className="per">one-time</span>
           </p>
           <p className="plan-desc">Use forever · all future updates included · up to {DEVICES} devices.</p>
-          {CHECKOUT_URL ? (
+          {STORE_OPEN ? (
             <Link href="/checkout" className="button primary" prefetch={false}>
               Buy Pro
             </Link>
@@ -160,9 +168,11 @@ export default function Pricing() {
         </article>
       </section>
       <p className="plans-note">
-        {CHECKOUT_URL
-          ? "Pay once, no subscription. Secure checkout by Lemon Squeezy."
-          : "Checkout opens once our store is verified. Pay once, no subscription."}
+        Pay once, no subscription.{" "}
+        {STORE_OPEN
+          ? "Payment is handled by Paddle, our reseller and merchant of record."
+          : "Checkout opens once our payment provider has verified the store."}{" "}
+        <Link href="/terms#refunds">14-day refunds</Link>.
       </p>
 
       <section className="section narrow" aria-labelledby="compare">

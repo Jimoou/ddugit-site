@@ -2,6 +2,8 @@
 //   DDUGIT1.<payload>.<signature>   both base64url; payload = JSON, signature = Ed25519 over it.
 // WebCrypto only, so it runs in Supabase Edge Functions (Deno) and in Node tests alike.
 
+import { CONTACT_EMAIL } from "./contact.ts";
+
 export interface LicenseInfo {
   id: string;
   name: string;
@@ -136,7 +138,7 @@ export const allowTestLicenses = (value: string | null | undefined) => /^(true|1
 
 /** What the app shows when a license can't be activated. */
 export const UNUSABLE_MESSAGE: Record<Unusable, string> = {
-  inactive: "This license is no longer active. Write to support@ddugit.com.",
+  inactive: `This license is no longer active. Write to ${CONTACT_EMAIL}.`,
   test: "This license comes from a test purchase and can't be activated.",
 };
 

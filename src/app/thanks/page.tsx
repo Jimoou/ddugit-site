@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = { title: "Thank you", robots: NOINDEX };
 
-/** Where the store sends the buyer after paying (Lemon Squeezy → product → button link). */
+/** Where Paddle's checkout sends the buyer after paying (`successUrl` in `checkoutRequest`). */
 export default function Thanks() {
   return (
     <div className="page prose">
@@ -21,7 +21,8 @@ export default function Thanks() {
       </p>
       <p className="muted small">
         Don’t see it on your account page? Make sure you’re signed in with the email you bought with, refresh in a
-        moment, or <Link href="/download">download ddugit</Link> if you haven’t yet. Your receipt is in your inbox.
+        moment, or <Link href="/download">download ddugit</Link> if you haven’t yet. Your receipt comes by email from
+        Paddle, our reseller.
       </p>
     </div>
   );

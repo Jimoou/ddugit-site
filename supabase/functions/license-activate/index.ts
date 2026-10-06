@@ -11,6 +11,7 @@
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.
 
 import { serviceDb, signingKey } from "../_shared/db.ts";
+import { CONTACT_EMAIL } from "../_shared/contact.ts";
 import { handle, json, optionalEnv } from "../_shared/http.ts";
 import {
   DEVICE_ID,
@@ -59,7 +60,7 @@ Deno.serve(
     if (refused) return json({ error: refused.error }, refused.status);
 
     if (!hash) {
-      if (!row.text) return json({ error: "This license isn't ready yet. Write to support@ddugit.com." }, 500);
+      if (!row.text) return json({ error: `This license isn't ready yet. Write to ${CONTACT_EMAIL}.` }, 500);
       return json({ license: row.text });
     }
 
