@@ -47,4 +47,5 @@ jobs:
           supabase functions deploy paddle-webhook --no-verify-jwt --project-ref "$PROJECT_REF"
           # license-refund is called by the site with the buyer's session: the JWT is checked.
           supabase functions deploy license-refund --project-ref "$PROJECT_REF"
+          supabase functions deploy license-offline --project-ref "$PROJECT_REF"
           supabase functions deploy report --no-verify-jwt --project-ref "$PROJECT_REF"

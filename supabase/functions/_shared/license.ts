@@ -104,8 +104,12 @@ export interface LicenseRow {
 /** Site licenses work anywhere; every other license is tied to the devices it is activated on. */
 export const deviceBound = (row: Pick<LicenseRow, "kind">) => row.kind !== "site";
 
-/** A lifetime license for one device: every update, no expiry. */
-export function lifetimeLicense(row: LicenseRow, today: string, device: string): LicenseInfo {
+/**
+ * A lifetime license: every update, no expiry. Signed for one device (`device`), or, as an
+ * offline activation code from the account page, for none: it then opens Pro on any computer
+ * it is pasted into, and an online one still drops it when the license is refunded.
+ */
+export function lifetimeLicense(row: LicenseRow, today: string, device?: string): LicenseInfo {
   return {
     id: row.id,
     name: row.name,
@@ -115,7 +119,7 @@ export function lifetimeLicense(row: LicenseRow, today: string, device: string):
     issued: today,
     updatesUntil: LIFETIME_UPDATES,
     plan: "lifetime",
-    device,
+    ...(device ? { device } : {}),
   };
 }
 

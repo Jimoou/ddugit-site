@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { NOINDEX } from "@/lib/seo";
 import Link from "next/link";
+import { SubmitButton } from "@/components/Pending";
 import { AuthSplit } from "@/components/AuthSplit";
 import { Devices } from "@/components/Devices";
 import {
@@ -25,7 +26,7 @@ export default async function Activate({ searchParams }: { searchParams: Promise
   const target = activationTarget(port, state, device, name);
   if (!target)
     return (
-      <div className="page prose">
+      <div className="page prose center">
         <p className="eyebrow">Activate</p>
         <h1>Open this from the app</h1>
         <p>In ddugit, go to Settings → License and choose “Activate with your ddugit.com account”.</p>
@@ -60,7 +61,7 @@ export default async function Activate({ searchParams }: { searchParams: Promise
   const chosen = chooseLicense(rows ?? [], testLicensesAllowed(), devices ?? [], hash);
   if (!chosen)
     return (
-      <div className="page prose">
+      <div className="page prose center">
         <p className="eyebrow">Activate</p>
         <h1>No ddugit Pro license</h1>
         <p>
@@ -74,7 +75,7 @@ export default async function Activate({ searchParams }: { searchParams: Promise
   const site = license.kind === "site";
   if (!site && !hash)
     return (
-      <div className="page prose">
+      <div className="page prose center">
         <p className="eyebrow">Activate</p>
         <h1>Update ddugit first</h1>
         <p>
@@ -88,7 +89,7 @@ export default async function Activate({ searchParams }: { searchParams: Promise
   const mine = (devices ?? []).filter((d) => d.license_id === license.id);
   const full = slot === "full";
   return (
-    <div className="page prose">
+    <div className="page prose center">
       <p className="eyebrow">Activate</p>
       <h1>{full ? `Your license is on ${max} devices` : "Activate ddugit Pro on this computer"}</h1>
       <section className="card">
@@ -119,7 +120,9 @@ export default async function Activate({ searchParams }: { searchParams: Promise
             </p>
           )}
           <form action={activate.bind(null, target)}>
-            <button className="button primary">Activate ddugit</button>
+            <SubmitButton pending="Activating…" className="button primary large">
+              Activate ddugit
+            </SubmitButton>
           </form>
           <p className="muted small">
             Your browser hands the app a one-time code; the app keeps the license on this computer, with no need to go

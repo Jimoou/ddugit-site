@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+import { NavProgress } from "@/components/Pending";
 import { Nav } from "@/components/Nav";
 import { Wordmark } from "@/components/Wordmark";
 import { OPEN_GRAPH, PAGES, TWITTER } from "@/lib/seo";
@@ -20,6 +22,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        {/* useSearchParams: kept out of the static pages' render by its own Suspense boundary. */}
+        <Suspense fallback={null}>
+          <NavProgress />
+        </Suspense>
         <a href="#content" className="skip">
           Skip to content
         </a>

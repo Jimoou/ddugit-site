@@ -11,6 +11,7 @@ import {
   licenseLabel,
   ownsPro,
   safeNext,
+  withNotice,
   sha256Hex,
 } from "./activate.ts";
 
@@ -164,4 +165,10 @@ test("someone with an active Pro license owns Pro; refunded, revoked and site li
     ]),
     true,
   );
+});
+
+test("a notice rides along on the page to go back to, keeping its query", () => {
+  assert.equal(withNotice("/account", "removed"), "/account?notice=removed");
+  assert.equal(withNotice("/activate?port=1&state=s", "removed"), "/activate?port=1&state=s&notice=removed");
+  assert.equal(withNotice("/account?notice=old", "removed"), "/account?notice=removed");
 });
