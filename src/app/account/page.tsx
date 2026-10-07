@@ -5,10 +5,9 @@ import { hasSupabase } from "@/lib/supabase/config";
 import { supabaseServer } from "@/lib/supabase/server";
 import { AuthSplit } from "@/components/AuthSplit";
 import { Devices } from "@/components/Devices";
-import { licenseLabel } from "@/lib/activate";
 import { OfflineCode } from "@/components/OfflineCode";
 import { ConfirmSubmit, SubmitButton } from "@/components/Pending";
-import { REFUND_DAYS, REFUND_REFUSED, type RefundRow, refundUntil, refundable } from "@shared/store.ts";
+import { REFUND_REFUSED, type RefundRow, refundUntil, refundable } from "@shared/store.ts";
 import { requestRefund, signOut } from "./actions";
 
 export const metadata: Metadata = { title: "Account", robots: NOINDEX };
@@ -82,54 +81,58 @@ export default async function Account({
           </p>
         )}
 
+        {licenses?.some((l) => l.status === "active") && <HowToActivate />}
+
         <h2 className="section-label">Licenses</h2>
         {licenses?.length ? (
           licenses.map((l) => {
             const mine = (devices ?? []).filter((d) => d.license_id === l.id);
             const max = (l.max_devices as number | null) ?? 3;
             const active = l.status === "active";
+            const site = l.kind === "site";
             return (
               <section key={l.id} id={l.id as string} className={active ? "card license" : "card license inactive"}>
                 <div className="license-head">
-                  <h3>
-                    {l.kind === "site"
-                      ? `Site license · ${l.seats} ${l.seats === 1 ? "seat" : "seats"}`
-                      : licenseLabel(l)}
-                  </h3>
+                  <div>
+                    <h3>{site ? "Site license" : "ddugit Pro"}</h3>
+                    <p className="license-meta">
+                      {site
+                        ? `${l.seats} ${l.seats === 1 ? "seat" : "seats"} · works offline`
+                        : `Lifetime · every update · bought ${day(l.created_at as string)}`}
+                    </p>
+                  </div>
                   <span className="license-badges">
                     <StatusBadge status={l.status as string} requested={Boolean(l.refund_requested_at)} />
                     {l.store_test && <span className="badge warn">Test order</span>}
                   </span>
                 </div>
-                {l.kind === "site" ? (
-                  <>
-                    <p className="muted small">
-                      In the app, choose Settings → License → “Activate with your ddugit.com account”. Offline? Paste
-                      this text there instead.
-                    </p>
-                    {l.text && active && (
-                      <textarea className="license-text" readOnly rows={3} value={l.text as string} />
+
+                {site
+                  ? l.text &&
+                    active && (
+                      <>
+                        <p className="license-label">License text (paste it in the app on offline computers)</p>
+                        <textarea className="license-text" readOnly rows={3} value={l.text as string} />
+                      </>
+                    )
+                  : active && (
+                      <>
+                        <div className="license-label devices-label">
+                          <span>Devices</span>
+                          <span className={mine.length >= max ? "devices-count full" : "devices-count"}>
+                            {mine.length} / {max}
+                          </span>
+                        </div>
+                        <div className="meter" aria-hidden="true">
+                          <span style={{ width: `${Math.min(100, (mine.length / max) * 100)}%` }} />
+                        </div>
+                        <Devices devices={mine} back="/account" />
+                        <div className="license-actions">
+                          <OfflineCode licenseId={l.id as string} />
+                          <Refund row={l as RefundRow & { id: string }} />
+                        </div>
+                      </>
                     )}
-                  </>
-                ) : (
-                  <>
-                    <p className="license-facts">
-                      <span>Paid once · every future update included</span>
-                      <span className={mine.length >= max ? "devices-count full" : "devices-count"}>
-                        {mine.length} of {max} devices
-                      </span>
-                    </p>
-                    {active && (
-                      <p className="muted small">
-                        To turn Pro on, open ddugit → Settings → License → “Activate with your ddugit.com account”.
-                        Moving to a new computer? Remove the old one below first.
-                      </p>
-                    )}
-                    <Devices devices={mine} back="/account" />
-                    {active && <OfflineCode licenseId={l.id as string} />}
-                    <Refund row={l as RefundRow & { id: string }} />
-                  </>
-                )}
               </section>
             );
           })
@@ -169,38 +172,53 @@ const STATUS: Record<string, string> = {
   revoked: "Revoked",
 };
 
-/** "Request a refund" while the license is in its refund period; "Refund requested" once asked. */
+/** "Request a refund" while the license is in its refund period (the dialog says what happens); a note once asked. */
 function Refund({ row }: { row: RefundRow & { id: string } }) {
   const why = refundable(row);
-  if (why === "requested" && row.status === "active")
-    return <p className="muted small">Pro turns off once Paddle completes the refund.</p>;
+  if (why === "requested")
+    return <p className="muted small">Refund on its way: Pro turns off once Paddle completes it.</p>;
   if (why) return null;
   return (
-    <details className="license-action">
-      <summary>Request a refund</summary>
-      <p className="muted small">
-        Within {REFUND_DAYS} days of payment (until {refundUntil(row.created_at)}) you get the full amount back, no
-        questions asked. Pro stops working on all your devices once the refund goes through.
-      </p>
-      <form action={requestRefund.bind(null, row.id)}>
-        <ConfirmSubmit
-          title="Refund your ddugit Pro purchase?"
-          body={
-            <>
-              <p>You get the full amount back to how you paid. This can&apos;t be undone:</p>
-              <ul>
-                <li>Pro turns off on all your devices once Paddle completes the refund.</li>
-                <li>Offline activation codes stop working on computers that go online.</li>
-                <li>To use Pro again later, you&apos;d buy a new license.</li>
-              </ul>
-            </>
-          }
-          confirm="Refund my purchase"
-          pending="Requesting…"
-        >
-          Refund my purchase
-        </ConfirmSubmit>
-      </form>
-    </details>
+    <form action={requestRefund.bind(null, row.id)}>
+      <ConfirmSubmit
+        title="Refund your ddugit Pro purchase?"
+        body={
+          <>
+            <p>You get the full amount back to how you paid. This can&apos;t be undone:</p>
+            <ul>
+              <li>Pro turns off on all your devices once Paddle completes the refund.</li>
+              <li>Offline activation codes stop working on computers that go online.</li>
+              <li>To use Pro again later, you&apos;d buy a new license.</li>
+            </ul>
+          </>
+        }
+        confirm="Refund my purchase"
+        pending="Requesting…"
+      >
+        Request a refund <span className="muted">· until {day(`${refundUntil(row.created_at)}T00:00:00Z`)}</span>
+      </ConfirmSubmit>
+    </form>
   );
 }
+
+/** How to turn Pro on, once for the page (not on every license). */
+function HowToActivate() {
+  return (
+    <section className="howto">
+      <h2 className="section-label">Turn Pro on</h2>
+      <ol>
+        <li>
+          Open ddugit (<Link href="/download">download</Link>) → Settings → License.
+        </li>
+        <li>Choose “Activate with your ddugit.com account” and sign in with this account.</li>
+      </ol>
+      <p className="muted small">
+        No internet on that computer? Use “Offline activation code” on your license below. Moving to a new computer?
+        Remove the old one first.
+      </p>
+    </section>
+  );
+}
+
+const day = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });

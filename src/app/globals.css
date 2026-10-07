@@ -1630,23 +1630,6 @@ button[aria-busy="true"] {
 .card .muted {
   color: var(--muted);
 }
-.license-action {
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
-}
-.license-action summary {
-  cursor: pointer;
-  color: var(--text);
-  font-size: 14px;
-  font-weight: 600;
-}
-.license-action[open] summary {
-  margin-bottom: 8px;
-}
-.license-action .button {
-  margin-top: 12px;
-}
 .actions-row {
   display: flex;
   flex-wrap: wrap;
@@ -1713,4 +1696,85 @@ dialog.confirm::backdrop {
 .button.danger:hover,
 .button.danger:focus-visible {
   background: rgba(255, 122, 122, 0.12);
+}
+
+/* License card: what it is, where it is, what can be done (activation help is once, above) */
+.howto {
+  margin: 0 0 32px;
+  padding: 20px 24px;
+  border: 1px solid rgba(var(--signal), 0.25);
+  background: rgba(var(--signal), 0.03);
+}
+.howto .section-label {
+  margin-top: 0;
+  color: var(--cyan);
+}
+.howto ol {
+  margin: 0 0 10px;
+  padding-left: 20px;
+  color: var(--text);
+}
+.howto li {
+  margin: 6px 0;
+}
+.howto li::marker {
+  color: var(--cyan);
+  font-weight: 600;
+}
+.license-head > div {
+  min-width: 0;
+}
+.card.license .license-meta {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.card.license .license-label {
+  margin: 20px 0 8px;
+  color: var(--muted);
+  font: 600 12px/1.4 var(--sans);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.devices-label {
+  display: flex;
+  justify-content: space-between;
+}
+.devices-label .devices-count {
+  letter-spacing: 0;
+}
+.meter {
+  height: 4px;
+  background: var(--line);
+}
+.meter span {
+  display: block;
+  height: 100%;
+  background: var(--cyan);
+}
+.card.license .devices {
+  margin-top: 4px;
+  border-top: 0;
+}
+.license-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.license-actions form {
+  margin: 0;
+}
+.license-actions .muted {
+  font-weight: 400;
+}
+dialog.confirm .license-text {
+  margin-top: 8px;
+  font: 12px/1.5 var(--mono);
+}
+.card.license .devices li:last-child {
+  border-bottom: 0;
 }
