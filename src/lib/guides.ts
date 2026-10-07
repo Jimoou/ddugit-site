@@ -1,4 +1,4 @@
-// How-to guides: everyday Git tasks, each shown on the command line and in ddugit.
+// How-to guides: everyday Git tasks done in ddugit, step by step, with the git commands behind them.
 // One table feeds the guides index, each guide's metadata and structured data, and the sitemap.
 
 export type Guide = {
@@ -18,36 +18,36 @@ export type Guide = {
 export const GUIDES = [
   {
     slug: "interactive-rebase",
-    title: "Git interactive rebase: squash, reorder and drop commits",
+    title: "Squash and reorder commits (interactive rebase) in ddugit",
     description:
-      "Clean up a branch before you share it: squash fixups, reorder and drop commits with git rebase -i, and how to do the same by dragging rows in ddugit.",
-    summary: "Squash, reorder, reword and drop commits before you share a branch.",
+      "Clean up a branch before you share it: reorder, squash, fixup and drop commits by dragging rows in ddugit, with the git rebase -i commands for reference.",
+    summary: "Drag rows to reorder, fold fixups into their commit, and apply the plan.",
     published: "2026-10-07",
     updated: "2026-10-07",
   },
   {
     slug: "resolve-merge-conflicts",
-    title: "How to resolve merge conflicts in Git",
+    title: "Resolve Git merge conflicts block by block in ddugit",
     description:
-      "What a Git merge conflict is, how to read conflict markers, how to finish or abort a merge, rebase or cherry-pick, and how to resolve conflicts block by block in ddugit.",
-    summary: "Read the markers, pick a side or combine both, and finish or abort safely.",
+      "Resolve merge, rebase and cherry-pick conflicts in ddugit: pick a side or both for each block, edit by hand, finish or cancel. Plus the git commands behind it.",
+    summary: "Pick a side or both for each block, then finish or cancel from the banner.",
     published: "2026-10-07",
     updated: "2026-10-07",
   },
   {
     slug: "cherry-pick-backport",
-    title: "Git cherry-pick and backporting fixes between branches",
+    title: "Cherry-pick and backport Git commits in ddugit",
     description:
-      "Copy commits from one branch to another with git cherry-pick, find which fixes a release branch is still missing, and backport them in order with ddugit.",
-    summary: "Copy fixes to another branch and find the ones a release is still missing.",
+      "Alt-drag a commit onto a branch to cherry-pick it, and use ddugit's backport sheet to find and apply the fixes a release branch is missing.",
+    summary: "Alt-drag a commit onto a branch, or list every fix a release is missing.",
     published: "2026-10-07",
     updated: "2026-10-07",
   },
   {
     slug: "undo-reset-reflog",
-    title: "How to undo in Git: reset, revert and the reflog",
+    title: "Undo commits and recover them from the reflog in ddugit",
     description:
-      "Undo the last commit, choose between git reset soft, mixed and hard, revert pushed commits, and recover lost commits from the reflog, on the command line and in ddugit.",
+      "Undo the last commit, reset a branch soft, mixed or hard, revert a pushed commit, and recover lost commits from ddugit's undo history (the reflog).",
     summary: "Undo a commit, reset a branch, and get back commits you thought were gone.",
     published: "2026-10-07",
     updated: "2026-10-07",

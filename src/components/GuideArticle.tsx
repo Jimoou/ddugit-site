@@ -55,13 +55,3 @@ export function Shell({ children }: { children: string }) {
     </pre>
   );
 }
-
-/** "In ddugit": how the same task goes in the app. */
-export function InApp({ children }: { children: React.ReactNode }) {
-  return (
-    <section className="in-app">
-      <p className="eyebrow">In ddugit</p>
-      {children}
-    </section>
-  );
-}

@@ -1871,18 +1871,32 @@ dialog.confirm .license-text {
   background: none;
   white-space: pre;
 }
-.in-app {
-  margin: 40px 0 24px;
-  padding: 20px 24px 8px;
-  border: 1px solid rgba(var(--signal), 0.28);
-  border-left-width: 3px;
-  background: rgba(var(--signal), 0.04);
-}
-.in-app .eyebrow {
-  margin-bottom: 10px;
-}
 .guide .screen {
-  margin: 0 0 24px;
+  margin: 8px 0 32px;
+}
+/* Screenshots step out of the text column where there is room, so the app's UI stays legible. */
+@media (min-width: 1100px) {
+  .guide .screen {
+    margin-right: -120px;
+    margin-left: -120px;
+  }
+}
+.screen figcaption {
+  padding: 10px 8px 6px;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+.steps {
+  padding-left: 22px;
+}
+.steps > li {
+  margin-bottom: 10px;
+  padding-left: 4px;
+}
+.steps > li::marker {
+  color: var(--cyan);
+  font-weight: 600;
 }
 .guide-more {
   margin-top: 56px;

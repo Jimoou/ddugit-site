@@ -10,10 +10,10 @@ export default function Guides() {
     <div className="page">
       <header className="page-head center">
         <p className="eyebrow">Guides</p>
-        <h1>Everyday Git, explained</h1>
+        <h1>Get things done in ddugit</h1>
         <p className="lead">
-          Short guides to the Git tasks that trip people up. Each one shows the commands and how the same thing looks on
-          the graph in ddugit.
+          Step-by-step guides to the Git tasks that trip people up, done on the graph. Each one ends with the git
+          commands behind it.
         </p>
       </header>
       <ul className="guide-list" aria-label={PAGES["/guides"].title}>
