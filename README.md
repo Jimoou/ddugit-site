@@ -59,7 +59,7 @@ npm run build
 
 1. 이 저장소 Secrets: `SUPABASE_ACCESS_TOKEN`(supabase.com → Account → Access Tokens), `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`
 2. Supabase → Edge Functions → Secrets: `DDUGIT_LICENSE_PRIVATE_KEY`(ddugit `scripts/license.mjs keygen`이 만든 PEM 전체), `DDUGIT_LICENSE_PUBKEY`(같은 키의 공개키, ddugit 저장소 Variables와 같은 값)
-3. 판매(Paddle Billing, 판매자: 개인 `site.ts`의 `SITE.seller`). 먼저 sandbox(sandbox-vendors.paddle.com)에서 끝까지 해 보고, live 계정(vendors.paddle.com)에서 같은 순서로 한 번 더:
+3. 판매(Paddle Billing, 판매자: 개인 `site.ts`의 `SITE.seller`). 먼저 sandbox(sandbox-vendors.paddle.com)에서 끝까지 해 보고, live 계정(vendors.paddle.com)에서 같은 순서로 한 번 더: 0. Claude Code: `.claude/settings.json`이 Paddle 공식 플러그인(`paddle@claude-community`: 웹훅·체크아웃·sandbox 테스트·상품 설정 안내)을 켠다. 플러그인의 MCP 서버(`mcp.paddle.com`, `sandbox-mcp.paddle.com`, `paddlehq.mcp.kapa.ai`)는 클라우드 세션 네트워크에서 그 호스트를 허용해야 붙고, sandbox 서버는 API 키를 `/plugin configure paddle@claude-community`로 넣는다(채팅·저장소에 넣지 않는다)
    1. Checkout → Website approval: `ddugit.com`을 추가하고 심사를 받는다(약관·개인정보·가격·환불 14일·판매자 이름·연락처가 사이트에 있어야 한다)
    2. Catalog → Products: "ddugit Pro"(세금 분류 `digital-goods` = 내려받는 소프트웨어. **첫 판매 뒤에는 바꿀 수 없다.** 기본값이 아닌 분류라 대시보드에서 승인이 필요할 수 있다), Price: One-time `$29 USD`(`site.ts`의 `PRO_PRICE`와 같게)
    3. Checkout → Checkout settings → Default payment link: `https://ddugit.com/checkout`
