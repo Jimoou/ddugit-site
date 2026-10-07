@@ -19,7 +19,7 @@
 // (license-activate); this only keeps rows.
 //
 // Senders: only Paddle's published addresses (GET {api}/ips, read at run time, never hard-coded);
-// PADDLE_IP_CHECK=enforce refuses anyone else, otherwise strangers are only logged.
+// Anyone else is refused (PADDLE_IP_CHECK=log only logs them, for debugging a gateway change).
 // No JWT (Paddle can't send one): the proof is Paddle-Signature, the HMAC-SHA256 of `ts:body`
 // under PADDLE_WEBHOOK_SECRET (the destination's secret key). PADDLE_API_KEY (read access to
 // customers) is needed only for a purchase made without a ddugit.com login, to look up the
@@ -56,8 +56,8 @@ async function paddleSenders(): Promise<string[] | null> {
 
 /**
  * The address a delivery came from, as Supabase's gateway reports it: the first `x-forwarded-for`
- * entry. PADDLE_IP_CHECK=log (the default until this is confirmed on real deliveries) only logs the
- * check; `enforce` refuses senders that aren't Paddle's.
+ * entry, which carries Paddle's address on real deliveries (seen on a sandbox delivery, 2026-10-07).
+ * Refused unless it is one of Paddle's; PADDLE_IP_CHECK=log only logs strangers instead.
  */
 const senderIp = (headers: Headers) => headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
 
@@ -77,12 +77,11 @@ async function customer(id: string): Promise<{ email: string; name: string | nul
 
 Deno.serve(
   handle(async (req) => {
-    const enforce = optionalEnv("PADDLE_IP_CHECK") === "enforce";
+    const enforce = optionalEnv("PADDLE_IP_CHECK") !== "log";
     const cidrs = await paddleSenders();
     if (!cidrs && enforce) return json({ error: "sender list unavailable" }, 503); // Paddle retries
     const ip = senderIp(req.headers);
     const fromPaddle = ipAllowed(ip, cidrs ?? []);
-    if (fromPaddle && !enforce) console.log(`sender is Paddle's: ${ip} [log only]`);
     if (!fromPaddle) {
       // Addresses only (Paddle's or a stranger's), for checking the header before enforcing.
       console.warn(
