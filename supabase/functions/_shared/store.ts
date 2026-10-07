@@ -198,12 +198,14 @@ export function refundable(row: RefundRow, now = Date.now()): NotRefundable | nu
 }
 
 /** Why a refund request didn't go through, by code (shared by license-refund and the account page). */
-export const REFUND_REFUSED: Record<NotRefundable | "failed", string> = {
+export const REFUND_REFUSED: Record<NotRefundable | "failed" | "unconfirmed", string> = {
   "not-bought": "This license wasn't bought in the store. Write to us instead.",
   inactive: "This license is no longer active.",
   requested: "A refund for this license has already been requested.",
   "too-late": "The 14-day refund period for this license is over. Write to us if something went wrong.",
   failed: "The refund couldn't be requested right now. Try again later, or write to us.",
+  unconfirmed:
+    "We couldn't confirm the refund request with the payment provider. If it isn't refunded within a day, write to us.",
 };
 
 /** The last day a refund can be asked for, as YYYY-MM-DD (UTC). */

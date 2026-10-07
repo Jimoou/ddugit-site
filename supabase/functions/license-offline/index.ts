@@ -9,7 +9,7 @@
 // Env: DDUGIT_LICENSE_PRIVATE_KEY, optional ALLOW_TEST_LICENSES; Supabase provides
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.
 
-import { serviceDb, signingKey } from "../_shared/db.ts";
+import { confirmedEmail, serviceDb, signingKey } from "../_shared/db.ts";
 import { handle, json, optionalEnv } from "../_shared/http.ts";
 import {
   UNUSABLE_MESSAGE,
@@ -27,16 +27,18 @@ Deno.serve(
     const id = typeof body.license === "string" && /^lic_[A-Za-z0-9_-]{1,64}$/.test(body.license) ? body.license : "";
     if (!token || !id) return json({ error: "bad request" }, 400);
 
-    const db = serviceDb();
-    const { data: who } = await db.auth.getUser(token);
-    const email = who.user?.email?.toLowerCase();
+    const email = await confirmedEmail(token);
     if (!email) return json({ error: "Sign in again." }, 401);
+    const db = serviceDb();
 
     const { data: row } = await db.from("licenses").select("*").eq("id", id).maybeSingle();
     if (!row || String(row.email).toLowerCase() !== email || !deviceBound(row))
       return json({ error: "No such license." }, 404);
     const problem = unusable(row, allowTestLicenses(optionalEnv("ALLOW_TEST_LICENSES")));
     if (problem) return json({ error: UNUSABLE_MESSAGE[problem] }, 403);
+    // A code made now would outlive the refund on a computer that never goes online.
+    if (row.refund_requested_at)
+      return json({ error: "A refund for this license has been requested, so no new codes are made." }, 409);
 
     const key = await signingKey();
     console.log(`offline code ${id}`);

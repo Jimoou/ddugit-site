@@ -12,7 +12,7 @@
 // license must be theirs (its email is the login's). Env: PADDLE_API_KEY (adjustments
 // write), PADDLE_ENV; Supabase provides SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.
 
-import { serviceDb } from "../_shared/db.ts";
+import { confirmedEmail, serviceDb } from "../_shared/db.ts";
 import { env, handle, json, optionalEnv } from "../_shared/http.ts";
 import { REFUND_REFUSED, type RefundRow, paddleApi, refundable } from "../_shared/store.ts";
 
@@ -28,10 +28,9 @@ Deno.serve(
     const id = typeof body.license === "string" && /^lic_[A-Za-z0-9_-]{1,64}$/.test(body.license) ? body.license : "";
     if (!token || !id) return json({ error: "bad request" }, 400);
 
-    const db = serviceDb();
-    const { data: who } = await db.auth.getUser(token);
-    const email = who.user?.email?.toLowerCase();
+    const email = await confirmedEmail(token);
     if (!email) return json({ error: "Sign in again." }, 401);
+    const db = serviceDb();
 
     const { data: row } = await db
       .from("licenses")
@@ -64,10 +63,16 @@ Deno.serve(
     }).catch(() => null);
     const answer = res ? await res.json().catch(() => null) : null;
     if (!res?.ok) {
-      await db.from("licenses").update({ refund_requested_at: null }).eq("id", id);
       // Paddle's error code only (no buyer data) for the function log.
       console.error(`refund ${id}: Paddle ${res?.status ?? "unreachable"} ${answer?.error?.code ?? ""}`);
-      return json({ error: REFUND_REFUSED.failed, code: "failed" }, 502);
+      // Only a definite refusal (4xx) frees the license to ask again. After a timeout or a 5xx the
+      // refund may have been made anyway: keep the claim so a second click can't refund twice; the
+      // adjustment webhook marks the license refunded if it went through.
+      if (res && res.status < 500) {
+        await db.from("licenses").update({ refund_requested_at: null }).eq("id", id);
+        return json({ error: REFUND_REFUSED.failed, code: "failed" }, 502);
+      }
+      return json({ error: REFUND_REFUSED.unconfirmed, code: "unconfirmed" }, 502);
     }
     console.log(`refund ${id}: requested (${answer?.data?.status ?? "?"})`);
     return json({ ok: true, status: answer?.data?.status ?? null });

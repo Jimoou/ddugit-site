@@ -130,8 +130,28 @@ export function senderIp(headers: { get(name: string): string | null }): string 
   return ip && isIp(ip) ? ip.toLowerCase() : null;
 }
 
-/** SHA-256 (hex) of `salt:ip`: what is kept instead of the IP, for rate limiting only. */
-export const senderHash = (salt: string, ip: string | null): Promise<string> => sha256Hex(`${salt}:${ip ?? "unknown"}`);
+/**
+ * Who a sender is for rate limiting: an IPv4 address as is, an IPv6 address by its /64 (one
+ * home or server usually gets a whole /64, so per-address limits would be easy to rotate past).
+ */
+export function senderKey(ip: string): string {
+  if (!ip.includes(":")) return ip;
+  const [head, tail = ""] = ip.split("::");
+  const left = head ? head.split(":") : [];
+  const right = ip.includes("::") && tail ? tail.split(":") : [];
+  // An embedded IPv4 tail (::ffff:1.2.3.4) is in the last 64 bits, so it never changes the prefix.
+  const groups = ip.includes("::")
+    ? [...left, ...Array(Math.max(0, 8 - left.length - right.length)).fill("0"), ...right]
+    : left;
+  return `${groups
+    .slice(0, 4)
+    .map((g) => (parseInt(g, 16) || 0).toString(16))
+    .join(":")}::/64`;
+}
+
+/** SHA-256 (hex) of `salt:sender`: what is kept instead of the IP, for rate limiting only. */
+export const senderHash = (salt: string, ip: string | null): Promise<string> =>
+  sha256Hex(`${salt}:${ip ? senderKey(ip) : "unknown"}`);
 
 /**
  * Whether one more report may be stored, given how many this sender and everyone
