@@ -1790,3 +1790,115 @@ dialog.confirm .license-text {
 .requirements.center {
   text-align: center;
 }
+
+/* Guides */
+.guide-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+@media (max-width: 720px) {
+  .guide-list {
+    grid-template-columns: 1fr;
+  }
+}
+.guide-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 28px;
+  background: var(--surface);
+  color: var(--text-2);
+  text-decoration: none;
+}
+.guide-card:hover,
+.guide-card:focus-visible {
+  background: var(--surface-2);
+}
+.guide-card h2 {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 19px;
+  letter-spacing: -0.015em;
+}
+.guide-card p {
+  flex: 1;
+  color: var(--muted);
+}
+.guide-go {
+  color: var(--cyan);
+  font-size: 14px;
+}
+.crumbs {
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+.crumbs a {
+  color: var(--cyan);
+  text-decoration: none;
+}
+.crumbs a::before {
+  content: "← ";
+}
+.guide .lead {
+  color: var(--text);
+}
+.guide-date {
+  font-size: 14px;
+}
+.guide li {
+  margin-bottom: 6px;
+}
+.shell {
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.shell code {
+  padding: 0;
+  border: 0;
+  background: none;
+  white-space: pre;
+}
+.in-app {
+  margin: 40px 0 24px;
+  padding: 20px 24px 8px;
+  border: 1px solid rgba(var(--signal), 0.28);
+  border-left-width: 3px;
+  background: rgba(var(--signal), 0.04);
+}
+.in-app .eyebrow {
+  margin-bottom: 10px;
+}
+.guide .screen {
+  margin: 0 0 24px;
+}
+.guide-more {
+  margin-top: 56px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.guide-more ul {
+  padding-left: 18px;
+}
+.guide-cta {
+  margin-top: 40px;
+  text-align: center;
+}
+.guide-cta h2 {
+  margin-top: 0;
+}
+.guide-cta p {
+  margin-bottom: 18px;
+}

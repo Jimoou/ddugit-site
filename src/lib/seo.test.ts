@@ -1,6 +1,7 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { BLOCKED_PATHS, jsonLd, PAGES, pageMeta, productData } from "./seo.ts";
+import { GUIDES } from "./guides.ts";
+import { BLOCKED_PATHS, guideData, guideMeta, jsonLd, PAGES, pageMeta, productData } from "./seo.ts";
 
 test("every public page has a search-sized title and description", () => {
   for (const [path, page] of Object.entries(PAGES)) {
@@ -30,4 +31,32 @@ test("structured data offers Free and the lifetime Pro price and can't close its
     ["0", "29"],
   );
   assert.ok(!jsonLd({ s: "</script><script>" }).__html.includes("</script>"));
+});
+
+test("every guide has a search-sized title and description, a unique slug and a page", async () => {
+  const { existsSync } = await import("node:fs");
+  const slugs = new Set<string>();
+  for (const g of GUIDES) {
+    assert.ok(g.title.length <= 60, `${g.slug} title is ${g.title.length} chars`);
+    assert.ok(g.description.length <= 200, `${g.slug} description is ${g.description.length} chars`);
+    assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(g.updated) && g.published <= g.updated, g.slug);
+    assert.ok(!slugs.has(g.slug), `duplicate ${g.slug}`);
+    slugs.add(g.slug);
+    assert.ok(existsSync(new URL(`../app/guides/${g.slug}/page.tsx`, import.meta.url)), `no page for ${g.slug}`);
+  }
+});
+
+test("a guide's metadata and structured data point at the guide", () => {
+  const meta = guideMeta("interactive-rebase");
+  assert.equal(meta.alternates?.canonical, "/guides/interactive-rebase");
+  assert.equal((meta.openGraph as { type: string }).type, "article");
+  const [article, crumbs] = guideData("interactive-rebase") as {
+    url?: string;
+    itemListElement?: { item: string }[];
+  }[];
+  assert.equal(article.url, "https://ddugit.com/guides/interactive-rebase");
+  assert.deepEqual(
+    crumbs.itemListElement?.map((i) => i.item),
+    ["https://ddugit.com/guides", "https://ddugit.com/guides/interactive-rebase"],
+  );
 });
