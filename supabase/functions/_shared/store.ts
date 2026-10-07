@@ -167,3 +167,45 @@ export function purchaseRow(purchase: Purchase, email: string, name: string | nu
 /** Paddle's API for `PADDLE_ENV` ("sandbox", or anything else for live). */
 export const paddleApi = (environment: string) =>
   environment === "sandbox" ? "https://sandbox-api.paddle.com" : "https://api.paddle.com";
+
+/** Days after payment in which a buyer can ask for a full refund themselves (the terms' refund period). */
+export const REFUND_DAYS = 14;
+
+/** What `refundable` reads from a `licenses` row. */
+export interface RefundRow {
+  kind: string;
+  status: string;
+  store_order_id: string | null;
+  created_at: string;
+  refund_requested_at: string | null;
+}
+
+/** Why a license can't be refunded from the account page; null when it can. */
+export type NotRefundable = "not-bought" | "inactive" | "requested" | "too-late";
+
+/**
+ * Whether the buyer can ask for a refund of this license themselves: a license bought in the
+ * Paddle store (`txn_…`), still active, not asked for yet, within `REFUND_DAYS` of its purchase
+ * (the row is made when the payment completes). Anything else goes through the contact page.
+ */
+export function refundable(row: RefundRow, now = Date.now()): NotRefundable | null {
+  if (row.kind === "site" || !row.store_order_id?.startsWith("txn_")) return "not-bought";
+  if (row.status !== "active") return "inactive";
+  if (row.refund_requested_at) return "requested";
+  const bought = Date.parse(row.created_at);
+  if (!(now - bought <= REFUND_DAYS * 86_400_000)) return "too-late";
+  return null;
+}
+
+/** Why a refund request didn't go through, by code (shared by license-refund and the account page). */
+export const REFUND_REFUSED: Record<NotRefundable | "failed", string> = {
+  "not-bought": "This license wasn't bought in the store. Write to us instead.",
+  inactive: "This license is no longer active.",
+  requested: "A refund for this license has already been requested.",
+  "too-late": "The 14-day refund period for this license is over. Write to us if something went wrong.",
+  failed: "The refund couldn't be requested right now. Try again later, or write to us.",
+};
+
+/** The last day a refund can be asked for, as YYYY-MM-DD (UTC). */
+export const refundUntil = (createdAt: string) =>
+  new Date(Date.parse(createdAt) + REFUND_DAYS * 86_400_000).toISOString().slice(0, 10);

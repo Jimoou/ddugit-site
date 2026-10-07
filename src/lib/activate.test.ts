@@ -9,6 +9,7 @@ import {
   deviceName,
   deviceSlot,
   licenseLabel,
+  ownsPro,
   safeNext,
   sha256Hex,
 } from "./activate.ts";
@@ -143,4 +144,24 @@ test("after signing in, only paths on this site", () => {
   // Whatever comes out stays on this site.
   for (const ok of ["/account", "/activate?port=1&state=x", "/a//b"])
     assert.equal(new URL(safeNext(ok), "https://ddugit.com").origin, "https://ddugit.com");
+});
+
+test("someone with an active Pro license owns Pro; refunded, revoked and site licenses don't count", () => {
+  assert.equal(ownsPro([]), false);
+  assert.equal(ownsPro([{ kind: "personal", status: "active" }]), true);
+  assert.equal(
+    ownsPro([
+      { kind: "personal", status: "refunded" },
+      { kind: "personal", status: "revoked" },
+    ]),
+    false,
+  );
+  assert.equal(ownsPro([{ kind: "site", status: "active" }]), false);
+  assert.equal(
+    ownsPro([
+      { kind: "site", status: "active" },
+      { kind: "personal", status: "active" },
+    ]),
+    true,
+  );
 });

@@ -144,3 +144,11 @@ export function safeNext(next: string | undefined | null): string {
   if (url.origin !== HERE || url.pathname.startsWith("//")) return "/account";
   return `${url.pathname}${url.search}${url.hash}`;
 }
+
+/**
+ * Whether the signed-in user already owns Pro: an active license that isn't a site license
+ * (store test orders count too, so a sandbox buyer is stopped the same way). /checkout then
+ * points them at their account instead of selling a second copy.
+ */
+export const ownsPro = (rows: Pick<LicenseRow, "kind" | "status">[]) =>
+  rows.some((r) => r.kind !== "site" && r.status === "active");
