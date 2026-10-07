@@ -1778,3 +1778,15 @@ dialog.confirm .license-text {
 .card.license .devices li:last-child {
   border-bottom: 0;
 }
+
+/* Centered rows of buttons (404, errors, activate, home Pro) */
+.center-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+.requirements.center {
+  text-align: center;
+}

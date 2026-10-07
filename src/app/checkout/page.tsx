@@ -41,7 +41,7 @@ export default async function Checkout({
     <AuthSplit
       eyebrow="Buy Pro"
       title="Sign in to buy ddugit Pro"
-      lead={`Your ${usd(PRO_PRICE)} lifetime license goes to this account; the app turns Pro on when you sign in from it.`}
+      lead={`Your ${usd(PRO_PRICE)} lifetime license is added to this account. To turn Pro on, you sign in with it from the app.`}
       next="/checkout"
       configured
       aside={

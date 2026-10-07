@@ -50,7 +50,7 @@ export default function Download() {
         </article>
       </section>
 
-      <section className="requirements">
+      <section className="requirements center">
         <h2>Requirements</h2>
         <p>
           ddugit uses the <a href="https://git-scm.com/downloads">Git</a> installed on your computer. Install it first
