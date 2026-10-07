@@ -51,8 +51,9 @@ export default function Terms() {
       <h2 id="refunds">4. Refunds</h2>
       <p>
         If ddugit Pro isn&apos;t right for you, ask for a refund within 14 days of payment and you get the full amount
-        back, no questions asked. Request it through Paddle (the link in your receipt email) or by writing to us. Once
-        the refund goes through, the license is turned off and Pro stops working on your devices at their next check.
+        back, no questions asked. Request it on your account page, through Paddle (the link in your receipt email) or by
+        writing to us. Once the refund goes through, the license is turned off and Pro stops working on your devices at
+        their next check.
       </p>
 
       <h2 id="use">5. Using ddugit</h2>

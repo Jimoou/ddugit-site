@@ -1477,3 +1477,22 @@ main:has(> .auth) {
   gap: 8px;
   margin-top: 24px;
 }
+
+/* Account: a license's offline activation and refund, folded away until asked for */
+.license details.offline,
+.license details.refund {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.license details summary {
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: 14px;
+}
+.license .offline-form {
+  margin-top: 12px;
+}
+.license .offline-form .field {
+  margin-bottom: 12px;
+}

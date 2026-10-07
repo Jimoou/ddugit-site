@@ -10,6 +10,10 @@ verify_jwt = false
 [functions.license-deactivate]
 verify_jwt = false
 
+# The account page's "Request a refund": called with the signed-in user's session, so the JWT is checked.
+[functions.license-refund]
+verify_jwt = true
+
 # Paddle's webhook: signed with Paddle-Signature, no Supabase JWT.
 [functions.paddle-webhook]
 verify_jwt = false
