@@ -168,6 +168,40 @@ export function purchaseRow(purchase: Purchase, email: string, name: string | nu
 export const paddleApi = (environment: string) =>
   environment === "sandbox" ? "https://sandbox-api.paddle.com" : "https://api.paddle.com";
 
+/**
+ * Where Paddle publishes the addresses it sends notifications from (`data.ipv4_cidrs`). It is
+ * the source of truth and can change, so the webhook reads it instead of a list in the code.
+ */
+export const paddleIpsUrl = (environment: string) => `${paddleApi(environment)}/ips`;
+
+/** The CIDRs in a `/ips` answer; [] when it isn't one. */
+export function ipCidrs(answer: unknown): string[] {
+  const list = (answer as { data?: { ipv4_cidrs?: unknown } } | null)?.data?.ipv4_cidrs;
+  return Array.isArray(list)
+    ? list.filter((c): c is string => typeof c === "string" && /^[\d.]+\/\d{1,2}$/.test(c))
+    : [];
+}
+
+const ipv4 = (s: string): number | null => {
+  const parts = s.split(".");
+  if (parts.length !== 4 || parts.some((p) => !/^\d{1,3}$/.test(p) || Number(p) > 255)) return null;
+  return parts.reduce((n, p) => n * 256 + Number(p), 0);
+};
+
+/** Whether IPv4 address `ip` is in one of `cidrs` (e.g. "3.208.120.145/32"). Anything else, IPv6 included, is not. */
+export function ipAllowed(ip: string | null, cidrs: readonly string[]): boolean {
+  const addr = ip ? ipv4(ip.trim()) : null;
+  if (addr === null) return false;
+  return cidrs.some((cidr) => {
+    const [base, bits] = cidr.split("/");
+    const net = ipv4(base);
+    const n = Number(bits);
+    if (net === null || !(n >= 0 && n <= 32)) return false;
+    const size = 2 ** (32 - n);
+    return Math.floor(addr / size) === Math.floor(net / size);
+  });
+}
+
 /** Days after payment in which a buyer can ask for a full refund themselves (the terms' refund period). */
 export const REFUND_DAYS = 14;
 

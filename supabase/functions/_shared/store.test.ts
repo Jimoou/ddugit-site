@@ -12,6 +12,9 @@ import {
   refundUntil,
   refundable,
   verifySignature,
+  ipAllowed,
+  ipCidrs,
+  paddleIpsUrl,
 } from "./store.ts";
 
 const PRO = ["pro_77"];
@@ -176,4 +179,19 @@ test("a store license can be refunded by its buyer for 14 days, once, while acti
   assert.equal(refundable({ ...row, kind: "site" }, at(bought)), "not-bought");
   assert.equal(refundable({ ...row, created_at: "garbage" }, at(bought)), "too-late");
   assert.equal(refundUntil(bought), "2026-10-15");
+});
+
+test("webhook deliveries are allowed only from Paddle's published addresses", () => {
+  const cidrs = ipCidrs({ data: { ipv4_cidrs: ["3.208.120.145/32", "10.1.0.0/16", "nonsense"] } });
+  assert.deepEqual(cidrs, ["3.208.120.145/32", "10.1.0.0/16"]);
+  assert.equal(ipAllowed("3.208.120.145", cidrs), true);
+  assert.equal(ipAllowed("3.208.120.146", cidrs), false);
+  assert.equal(ipAllowed("10.1.255.7", cidrs), true);
+  assert.equal(ipAllowed("10.2.0.1", cidrs), false);
+  assert.equal(ipAllowed("2001:db8::1", cidrs), false);
+  assert.equal(ipAllowed(null, cidrs), false);
+  assert.equal(ipAllowed("3.208.120.145", []), false);
+  assert.deepEqual(ipCidrs({ error: "x" }), []);
+  assert.equal(paddleIpsUrl("sandbox"), "https://sandbox-api.paddle.com/ips");
+  assert.equal(paddleIpsUrl("production"), "https://api.paddle.com/ips");
 });

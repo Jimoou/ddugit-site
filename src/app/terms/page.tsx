@@ -54,7 +54,7 @@ export default function Terms() {
         back, no questions asked. Request it on your account page, through Paddle (the link in your receipt email) or by
         writing to us. Once the refund goes through, the license is turned off and Pro stops working on your devices at
         their next check. A computer activated offline never checks: after a refund you must stop using Pro there and
-        remove its license (Settings → License).
+        remove its license (Settings → License). The <Link href="/refunds">refund policy</Link> has the details.
       </p>
 
       <h2 id="use">5. Using ddugit</h2>

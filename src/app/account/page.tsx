@@ -7,6 +7,7 @@ import { AuthSplit } from "@/components/AuthSplit";
 import { Devices } from "@/components/Devices";
 import { OfflineCode } from "@/components/OfflineCode";
 import { ConfirmSubmit, ForgetNotice, SubmitButton } from "@/components/Pending";
+import { testLicensesAllowed } from "@/lib/activate";
 import { REFUND_REFUSED, type RefundRow, refundUntil, refundable } from "@shared/store.ts";
 import { requestRefund, signOut } from "./actions";
 
@@ -53,6 +54,7 @@ export default async function Account({
     // RLS shows a user only their own admin row, if any.
     db.from("admins").select("email").limit(1),
   ]);
+  const testAllowed = testLicensesAllowed();
   return (
     <div className="page account">
       <header className="page-head center">
@@ -89,7 +91,8 @@ export default async function Account({
           licenses.map((l) => {
             const mine = (devices ?? []).filter((d) => d.license_id === l.id);
             const max = (l.max_devices as number | null) ?? 3;
-            const active = l.status === "active";
+            // A test order is shown, but can't be used where test orders don't work (live).
+            const active = l.status === "active" && (!l.store_test || testAllowed);
             const site = l.kind === "site";
             return (
               <section key={l.id} id={l.id as string} className={active ? "card license" : "card license inactive"}>
@@ -103,8 +106,14 @@ export default async function Account({
                     </p>
                   </div>
                   <span className="license-badges">
-                    <StatusBadge status={l.status as string} requested={Boolean(l.refund_requested_at)} />
-                    {l.store_test && <span className="badge warn">Test order</span>}
+                    {l.store_test && !testAllowed ? (
+                      <span className="badge bad">Test order · not usable</span>
+                    ) : (
+                      <>
+                        <StatusBadge status={l.status as string} requested={Boolean(l.refund_requested_at)} />
+                        {l.store_test && <span className="badge warn">Test order</span>}
+                      </>
+                    )}
                   </span>
                 </div>
 

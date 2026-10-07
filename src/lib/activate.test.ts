@@ -148,23 +148,33 @@ test("after signing in, only paths on this site", () => {
 });
 
 test("someone with an active Pro license owns Pro; refunded, revoked and site licenses don't count", () => {
-  assert.equal(ownsPro([]), false);
-  assert.equal(ownsPro([{ kind: "personal", status: "active" }]), true);
+  assert.equal(ownsPro([], false), false);
+  assert.equal(ownsPro([{ kind: "personal", status: "active" }], false), true);
   assert.equal(
-    ownsPro([
-      { kind: "personal", status: "refunded" },
-      { kind: "personal", status: "revoked" },
-    ]),
+    ownsPro(
+      [
+        { kind: "personal", status: "refunded" },
+        { kind: "personal", status: "revoked" },
+      ],
+      false,
+    ),
     false,
   );
-  assert.equal(ownsPro([{ kind: "site", status: "active" }]), false);
+  assert.equal(ownsPro([{ kind: "site", status: "active" }], false), false);
   assert.equal(
-    ownsPro([
-      { kind: "site", status: "active" },
-      { kind: "personal", status: "active" },
-    ]),
+    ownsPro(
+      [
+        { kind: "site", status: "active" },
+        { kind: "personal", status: "active" },
+      ],
+      false,
+    ),
     true,
   );
+  // A sandbox order stops a second test purchase, but not a live one.
+  const test = [{ kind: "personal", status: "active", store_test: true }];
+  assert.equal(ownsPro(test, true), true);
+  assert.equal(ownsPro(test, false), false);
 });
 
 test("a notice rides along on the page to go back to, keeping its query", () => {
