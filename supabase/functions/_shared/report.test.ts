@@ -9,6 +9,7 @@ import {
   forwardedBySite,
   isBot,
   senderHash,
+  senderKey,
   senderIp,
 } from "./report.ts";
 
@@ -132,4 +133,16 @@ test("five reports per sender per hour, with a cap for everyone", () => {
   assert.equal(allowed(PER_SENDER_HOUR, 10), false);
   assert.equal(allowed(0, ALL_HOUR - 1), true);
   assert.equal(allowed(0, ALL_HOUR), false);
+});
+
+test("IPv6 senders are limited by their /64, IPv4 senders by address", async () => {
+  assert.equal(senderKey("203.0.113.9"), "203.0.113.9");
+  assert.equal(senderKey("2001:db8:aa:bb:1:2:3:4"), "2001:db8:aa:bb::/64");
+  assert.equal(senderKey("2001:0db8:00aa:00bb::9"), "2001:db8:aa:bb::/64");
+  assert.equal(senderKey("2001:db8::1"), "2001:db8:0:0::/64");
+  assert.equal(senderKey("::1"), "0:0:0:0::/64");
+  assert.equal(
+    await senderHash("pepper", "2001:db8:aa:bb::1"),
+    await senderHash("pepper", "2001:db8:aa:bb:ffff:ffff:ffff:ffff"),
+  );
 });

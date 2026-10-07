@@ -7,6 +7,9 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL, hasSupabase } from "@/lib/supabase/con
  */
 export async function forward(request: Request, fn: string, maxBytes: number, headers: Record<string, string> = {}) {
   if (!hasSupabase()) return Response.json({ error: "not configured" }, { status: 503 });
+  // Refuse a declared oversize body before reading it; the count below catches undeclared ones.
+  if (Number(request.headers.get("content-length")) > maxBytes)
+    return Response.json({ error: "The request is too large." }, { status: 413 });
   const body = await request.text();
   if (new TextEncoder().encode(body).byteLength > maxBytes)
     return Response.json({ error: "The request is too large." }, { status: 413 });

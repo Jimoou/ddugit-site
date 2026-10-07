@@ -129,7 +129,7 @@ export default async function Account({
                         </div>
                         <Devices devices={mine} back="/account" />
                         <div className="license-actions">
-                          <OfflineCode licenseId={l.id as string} />
+                          {!l.refund_requested_at && <OfflineCode licenseId={l.id as string} />}
                           <Refund row={l as RefundRow & { id: string }} />
                         </div>
                       </>
