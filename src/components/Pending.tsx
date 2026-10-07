@@ -147,3 +147,15 @@ export function ForgetNotice() {
   }, []);
   return null;
 }
+
+/**
+ * A server-rendered page's `loading.tsx`, for routes that read the account or the server on each request.
+ * Static pages have none: a root loading boundary would put “Loading…” in their prerendered HTML too.
+ */
+export function PageLoading() {
+  return (
+    <div className="page-loading" role="status">
+      <Spinner label="Loading…" />
+    </div>
+  );
+}

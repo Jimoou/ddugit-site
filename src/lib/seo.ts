@@ -3,6 +3,7 @@
 
 import type { Metadata } from "next";
 import { DEVICES, PRO_PRICE, SITE } from "../site.ts";
+import { type GuideSlug, guideBySlug, guidePath } from "./guides.ts";
 
 type Page = { title: string; description: string; priority: number };
 
@@ -24,6 +25,12 @@ export const PAGES = {
     title: `Pricing: free Git client, $${PRO_PRICE} lifetime Pro`,
     description: `ddugit is free for everyday Git, with no time limit. Pro is a one-time $${PRO_PRICE} payment: use it forever on up to ${DEVICES} devices, with every future update.`,
     priority: 0.8,
+  },
+  "/guides": {
+    title: "Git guides: rebase, conflicts, cherry-pick and undo",
+    description:
+      "Short, practical guides to everyday Git: interactive rebase, merge conflicts, cherry-pick and backports, and undoing with reset and the reflog. Command line and ddugit.",
+    priority: 0.7,
   },
   "/contact": {
     title: "Contact",
@@ -69,12 +76,27 @@ export const TWITTER: Metadata["twitter"] = { card: "summary_large_image", image
 export function pageMeta(path: PublicPath): Metadata {
   const { title, description } = PAGES[path];
   // The home page's title is already complete; the others get the "· ddugit" template.
-  const full = path === "/" ? { absolute: title } : title;
+  return meta(path, path === "/" ? { absolute: title } : title, title, description);
+}
+
+/** A guide's metadata, as `pageMeta`. */
+export function guideMeta(slug: GuideSlug): Metadata {
+  const { title, description } = guideBySlug(slug);
+  return meta(guidePath(slug), title, title, description, "article");
+}
+
+function meta(
+  path: string,
+  full: Metadata["title"],
+  title: string,
+  description: string,
+  type: "website" | "article" = "website",
+): Metadata {
   return {
     title: full,
     description,
     alternates: { canonical: path },
-    openGraph: { ...OPEN_GRAPH, url: path, title, description },
+    openGraph: { ...OPEN_GRAPH, type, url: path, title, description },
     twitter: { ...TWITTER, title, description },
   };
 }
@@ -96,6 +118,36 @@ export function productData(): Record<string, unknown> {
       { "@type": "Offer", name: "Pro (lifetime)", price: String(PRO_PRICE), priceCurrency: "USD" },
     ],
   };
+}
+
+/** A guide as schema.org data: the article and its place under Guides (for the breadcrumb in results). */
+export function guideData(slug: GuideSlug): Record<string, unknown>[] {
+  const { title, description, published, updated } = guideBySlug(slug);
+  const url = `${SITE.url}${guidePath(slug)}`;
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      headline: title,
+      description,
+      url,
+      mainEntityOfPage: url,
+      datePublished: published,
+      dateModified: updated,
+      image: `${SITE.url}${SHARE_IMAGE.url}`,
+      author: { "@type": "Person", name: SITE.seller },
+      publisher: { "@type": "Organization", name: SITE.name, url: SITE.url },
+      about: { "@type": "SoftwareApplication", name: "Git" },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Guides", item: `${SITE.url}/guides` },
+        { "@type": "ListItem", position: 2, name: title, item: url },
+      ],
+    },
+  ];
 }
 
 /** Embeds structured data in a page; `<` is escaped so the JSON can't close the script tag. */
