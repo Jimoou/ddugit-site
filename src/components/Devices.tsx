@@ -1,6 +1,6 @@
 import { removeDevice } from "@/app/account/actions";
 import type { DeviceRow } from "@/lib/activate";
-import { SubmitButton } from "./Pending";
+import { ConfirmSubmit } from "./Pending";
 
 const day = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
@@ -20,9 +20,19 @@ export function Devices({ devices, back, current }: { devices: DeviceRow[]; back
             </p>
           </div>
           <form action={removeDevice.bind(null, d.license_id, d.device_hash, back)}>
-            <SubmitButton pending="Removing…" className="button small">
+            <ConfirmSubmit
+              title={`Remove ${d.name}?`}
+              body={
+                <p>
+                  Pro turns off on that computer the next time it checks in, and its place is free for another computer.
+                  You can activate it again later.
+                </p>
+              }
+              confirm="Remove"
+              pending="Removing…"
+            >
               Remove
-            </SubmitButton>
+            </ConfirmSubmit>
           </form>
         </li>
       ))}
