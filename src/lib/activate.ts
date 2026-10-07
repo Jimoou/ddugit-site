@@ -146,12 +146,13 @@ export function safeNext(next: string | undefined | null): string {
 }
 
 /**
- * Whether the signed-in user already owns Pro: an active license that isn't a site license
- * (store test orders count too, so a sandbox buyer is stopped the same way). /checkout then
- * points them at their account instead of selling a second copy.
+ * Whether the signed-in user already owns Pro: an active license that isn't a site license.
+ * A store test order counts only where test orders work (`allowTest`, ALLOW_TEST_LICENSES): in
+ * the sandbox it stops a second test purchase, live it must not stop the real one. /checkout
+ * then points them at their account instead of selling a second copy.
  */
-export const ownsPro = (rows: Pick<LicenseRow, "kind" | "status">[]) =>
-  rows.some((r) => r.kind !== "site" && r.status === "active");
+export const ownsPro = (rows: Pick<LicenseRow, "kind" | "status" | "store_test">[], allowTest: boolean) =>
+  rows.some((r) => r.kind !== "site" && r.status === "active" && (!r.store_test || allowTest));
 
 /** `path` (a path on this site) with `?notice=<what>` set, for the page to say what just happened. */
 export function withNotice(path: string, what: string): string {

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { AuthSplit } from "@/components/AuthSplit";
 import { PaddleCheckout } from "@/components/PaddleCheckout";
-import { ownsPro } from "@/lib/activate";
+import { ownsPro, testLicensesAllowed } from "@/lib/activate";
 import { NOINDEX } from "@/lib/seo";
 import { hasSupabase } from "@/lib/supabase/config";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -33,8 +33,8 @@ export default async function Checkout({
   const db = await supabaseServer();
   const user = (await db.auth.getUser()).data.user;
   if (user?.email) {
-    const { data: licenses } = await db.from("licenses").select("kind, status");
-    return ownsPro(licenses ?? []) ? <AlreadyPro /> : checkout(user.email);
+    const { data: licenses } = await db.from("licenses").select("kind, status, store_test");
+    return ownsPro(licenses ?? [], testLicensesAllowed()) ? <AlreadyPro /> : checkout(user.email);
   }
 
   return (

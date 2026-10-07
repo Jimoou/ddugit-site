@@ -57,6 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <h2>Legal</h2>
                 <Link href="/terms">Terms</Link>
                 <Link href="/privacy">Privacy</Link>
+                <Link href="/refunds">Refunds</Link>
               </div>
               <div>
                 <h2>Contact</h2>

@@ -37,6 +37,12 @@ export const PAGES = {
     description: "Report a problem with ddugit or ask a question, including about site licenses.",
     priority: 0.3,
   },
+  "/refunds": {
+    title: "Refund policy",
+    description:
+      "ddugit Pro comes with a full refund within 14 days of payment, no questions asked. How to ask and what happens after.",
+    priority: 0.2,
+  },
   "/terms": { title: "Terms of use", description: "The terms for using ddugit and ddugit Pro.", priority: 0.2 },
   "/privacy": { title: "Privacy", description: "What ddugit and ddugit.com collect, and why.", priority: 0.2 },
 } as const satisfies Record<string, Page>;

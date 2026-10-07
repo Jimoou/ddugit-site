@@ -18,6 +18,8 @@
 // is inserted and then refunded at once. Licenses are signed per device at activation
 // (license-activate); this only keeps rows.
 //
+// Senders: only Paddle's published addresses (GET {api}/ips, read at run time, never hard-coded);
+// PADDLE_IP_CHECK=enforce refuses anyone else, otherwise strangers are only logged.
 // No JWT (Paddle can't send one): the proof is Paddle-Signature, the HMAC-SHA256 of `ts:body`
 // under PADDLE_WEBHOOK_SECRET (the destination's secret key). PADDLE_API_KEY (read access to
 // customers) is needed only for a purchase made without a ddugit.com login, to look up the
@@ -30,12 +32,34 @@ import {
   type Purchase,
   type StoreEvent,
   decide,
+  ipAllowed,
+  ipCidrs,
   newLicenseId,
   paddleApi,
   productIds,
+  paddleIpsUrl,
   purchaseRow,
   verifySignature,
 } from "../_shared/store.ts";
+
+/** Paddle's sending addresses, read from its /ips endpoint at most once an hour per instance. */
+let senders: { cidrs: string[]; at: number } | null = null;
+async function paddleSenders(): Promise<string[] | null> {
+  if (senders && Date.now() - senders.at < 3_600_000) return senders.cidrs;
+  const res = await fetch(paddleIpsUrl(optionalEnv("PADDLE_ENV")), { signal: AbortSignal.timeout(2_000) }).catch(
+    () => null,
+  );
+  const cidrs = res?.ok ? ipCidrs(await res.json().catch(() => null)) : [];
+  if (cidrs.length) senders = { cidrs, at: Date.now() };
+  return senders?.cidrs ?? null; // an older list beats none
+}
+
+/**
+ * The address a delivery came from, as Supabase's gateway reports it: the first `x-forwarded-for`
+ * entry. PADDLE_IP_CHECK=log (the default until this is confirmed on real deliveries) only logs the
+ * check; `enforce` refuses senders that aren't Paddle's.
+ */
+const senderIp = (headers: Headers) => headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
 
 /** The buyer's email and name from Paddle, for a purchase made without a ddugit.com login. */
 async function customer(id: string): Promise<{ email: string; name: string | null } | null> {
@@ -53,6 +77,20 @@ async function customer(id: string): Promise<{ email: string; name: string | nul
 
 Deno.serve(
   handle(async (req) => {
+    const enforce = optionalEnv("PADDLE_IP_CHECK") === "enforce";
+    const cidrs = await paddleSenders();
+    if (!cidrs && enforce) return json({ error: "sender list unavailable" }, 503); // Paddle retries
+    const ip = senderIp(req.headers);
+    const fromPaddle = ipAllowed(ip, cidrs ?? []);
+    if (fromPaddle && !enforce) console.log(`sender is Paddle's: ${ip} [log only]`);
+    if (!fromPaddle) {
+      // Addresses only (Paddle's or a stranger's), for checking the header before enforcing.
+      console.warn(
+        `sender not Paddle's: ${ip ?? "-"} (xff ${req.headers.get("x-forwarded-for") ?? "-"}, real ${req.headers.get("x-real-ip") ?? "-"}, cf ${req.headers.get("cf-connecting-ip") ?? "-"})${enforce ? "" : " [log only]"}`,
+      );
+      if (enforce) return json({ error: "forbidden" }, 403);
+    }
+
     const body = new Uint8Array(await req.arrayBuffer());
     if (body.byteLength > 256 * 1024) return json({ error: "too large" }, 413);
     if (!(await verifySignature(env("PADDLE_WEBHOOK_SECRET"), body, req.headers.get("paddle-signature"))))
