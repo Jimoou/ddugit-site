@@ -61,13 +61,13 @@ npm run build
 2. Supabase → Edge Functions → Secrets: `DDUGIT_LICENSE_PRIVATE_KEY`(ddugit `scripts/license.mjs keygen`이 만든 PEM 전체), `DDUGIT_LICENSE_PUBKEY`(같은 키의 공개키, ddugit 저장소 Variables와 같은 값)
 3. 판매(Paddle Billing, 판매자: 개인 `site.ts`의 `SITE.seller`). 먼저 sandbox(sandbox-vendors.paddle.com)에서 끝까지 해 보고, live 계정(vendors.paddle.com)에서 같은 순서로 한 번 더:
    1. Checkout → Website approval: `ddugit.com`을 추가하고 심사를 받는다(약관·개인정보·가격·환불 14일·판매자 이름·연락처가 사이트에 있어야 한다)
-   2. Catalog → Products: "ddugit Pro"(세금 분류 Standard digital goods), Price: One-time `$29 USD`(`site.ts`의 `PRO_PRICE`와 같게)
+   2. Catalog → Products: "ddugit Pro"(세금 분류 `digital-goods` = 내려받는 소프트웨어. **첫 판매 뒤에는 바꿀 수 없다.** 기본값이 아닌 분류라 대시보드에서 승인이 필요할 수 있다), Price: One-time `$29 USD`(`site.ts`의 `PRO_PRICE`와 같게)
    3. Checkout → Checkout settings → Default payment link: `https://ddugit.com/checkout`
    4. Developer tools → Authentication: Client-side token → Netlify `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`. API key(Customers 읽기) → Supabase `PADDLE_API_KEY`
-   5. Developer tools → Notifications → New destination: URL `https://<project-ref>.supabase.co/functions/v1/paddle-webhook`, 이벤트 `transaction.completed`·`adjustment.created`·`adjustment.updated`. 만든 뒤 보이는 Secret key → Supabase `PADDLE_WEBHOOK_SECRET`
+   5. Developer tools → Notifications → New destination(Paddle은 5초 안에 2xx를 받아야 전달로 친다. 넘으면 다시 보내고, 함수는 같은 거래를 한 번만 처리하므로 안전하다): URL `https://<project-ref>.supabase.co/functions/v1/paddle-webhook`, 이벤트 `transaction.completed`·`adjustment.created`·`adjustment.updated`. 만든 뒤 보이는 Secret key → Supabase `PADDLE_WEBHOOK_SECRET`
    6. Supabase Secrets: **필수** `PADDLE_PRODUCT_ID` = 상품 id(`pro_…`, 여러 개면 쉼표), `PADDLE_ENV` = `sandbox`(sandbox일 때만, live는 비우거나 `production`)
    7. Netlify: `NEXT_PUBLIC_PADDLE_PRICE_ID` = 가격 id(`pri_…`), `NEXT_PUBLIC_PADDLE_ENV` = `sandbox` 또는 `production`, 다시 배포. 토큰과 환경이 안 맞으면 가격 페이지 버튼은 "Available soon"
-   8. sandbox로 끝까지 사 보기: 테스트 카드 `4242 4242 4242 4242`(만료일은 미래, CVC `100`). Supabase Secrets와 Netlify **둘 다**에 `ALLOW_TEST_LICENSES=true`를 넣어야 sandbox 라이선스(`store_test`)를 활성화할 수 있다. 사 보고, 앱에서 활성화하고, Paddle에서 환불해 Pro가 꺼지는 것까지 본 뒤 두 곳에서 **지우고**(Netlify는 다시 배포) 테스트 라이선스는 끈다: `update public.licenses set status = 'revoked' where store_test;`
+   8. sandbox로 끝까지 사 보기: 테스트 카드 `4242 4242 4242 4242`(만료일은 미래, CVC 아무 세 자리). Supabase Secrets와 Netlify **둘 다**에 `ALLOW_TEST_LICENSES=true`를 넣어야 sandbox 라이선스(`store_test`)를 활성화할 수 있다. 사 보고, 앱에서 활성화하고, Paddle에서 환불해 Pro가 꺼지는 것까지 본 뒤 두 곳에서 **지우고**(Netlify는 다시 배포) 테스트 라이선스는 끈다: `update public.licenses set status = 'revoked' where store_test;`
 
 구매 흐름: 가격 페이지 → `/checkout`(로그인 안 했으면 로그인 후 돌아옴, `?guest`는 로그인 없이) → 같은 페이지에서 Paddle.js 오버레이 체크아웃(로그인 이메일을 `customer.email`로 고정하고 `customData.email`로도 넘김) → 웹훅이 그 이메일로 라이선스 행을 만든다 → `/thanks` → 앱의 설정 → License → "Sign in with ddugit.com". `/checkout?_ptxn=txn_…`(Paddle 결제 링크)는 로그인 없이 그 거래를 연다
 

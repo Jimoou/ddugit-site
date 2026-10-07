@@ -41,7 +41,8 @@ import {
 async function customer(id: string): Promise<{ email: string; name: string | null } | null> {
   const res = await fetch(`${paddleApi(optionalEnv("PADDLE_ENV"))}/customers/${encodeURIComponent(id)}`, {
     headers: { authorization: `Bearer ${env("PADDLE_API_KEY")}` },
-    signal: AbortSignal.timeout(10_000),
+    // Paddle counts a delivery only if it is answered within 5 seconds (it retries otherwise).
+    signal: AbortSignal.timeout(3_000),
   });
   if (!res.ok) return null;
   const data = (await res.json())?.data;
