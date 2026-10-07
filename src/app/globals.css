@@ -1664,3 +1664,53 @@ button[aria-busy="true"] {
 .account-foot form {
   margin: 0;
 }
+
+/* "Are you sure?" before what can't be undone (ConfirmSubmit) */
+dialog.confirm {
+  max-width: min(460px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  background: var(--brackets), var(--surface);
+  color: var(--text-2);
+}
+dialog.confirm::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(2px);
+}
+.confirm-box {
+  padding: 24px;
+  text-align: left;
+}
+.confirm-box h3 {
+  margin: 0 0 12px;
+  color: var(--text);
+  font-size: 18px;
+}
+.confirm-body {
+  font-size: 15px;
+}
+.confirm-body p {
+  margin: 0 0 8px;
+}
+.confirm-body ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--muted);
+}
+.confirm-body li {
+  margin: 4px 0;
+}
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+.button.danger {
+  border-color: rgba(255, 122, 122, 0.6);
+  color: var(--bad);
+}
+.button.danger:hover,
+.button.danger:focus-visible {
+  background: rgba(255, 122, 122, 0.12);
+}

@@ -2,10 +2,10 @@
 
 // Showing that the site is working: a spinner for buttons that wait on the server, a submit
 // button that turns into one while its form is sent, and a bar at the top of the window while
-// a link or a form takes the browser to the next page.
+// a link or a form takes the browser to the next page; and a confirmation before what can't be undone.
 
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 /** A small spinner with its text. */
@@ -84,4 +84,55 @@ export function NavProgress() {
   }, [here]);
 
   return <div className={startedOn === here ? "nav-progress on" : "nav-progress"} aria-hidden="true" />;
+}
+
+/**
+ * A button for something that can't be undone (a refund, removing a device): it asks first in
+ * a modal dialog, and only "confirm" there sends the form it sits in. Esc or Cancel closes it.
+ */
+export function ConfirmSubmit({
+  children,
+  title,
+  body,
+  confirm,
+  pending,
+  className = "button small",
+}: {
+  children: React.ReactNode;
+  title: string;
+  body: React.ReactNode;
+  confirm: string;
+  pending: string;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+  const { pending: sending } = useFormStatus();
+  return (
+    <>
+      <button type="button" className={className} disabled={sending} onClick={() => ref.current?.showModal()}>
+        {sending ? <Spinner label={pending} /> : children}
+      </button>
+      <dialog
+        ref={ref}
+        className="confirm"
+        aria-labelledby={titleId}
+        // A click on the backdrop (the dialog element itself, outside its box) closes it.
+        onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}
+      >
+        <div className="confirm-box">
+          <h3 id={titleId}>{title}</h3>
+          <div className="confirm-body">{body}</div>
+          <div className="confirm-actions">
+            <button type="button" className="button small" autoFocus onClick={() => ref.current?.close()}>
+              Cancel
+            </button>
+            <button className="button small danger" onClick={() => ref.current?.close()}>
+              {confirm}
+            </button>
+          </div>
+        </div>
+      </dialog>
+    </>
+  );
 }

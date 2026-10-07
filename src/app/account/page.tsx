@@ -7,7 +7,7 @@ import { AuthSplit } from "@/components/AuthSplit";
 import { Devices } from "@/components/Devices";
 import { licenseLabel } from "@/lib/activate";
 import { OfflineCode } from "@/components/OfflineCode";
-import { SubmitButton } from "@/components/Pending";
+import { ConfirmSubmit, SubmitButton } from "@/components/Pending";
 import { REFUND_DAYS, REFUND_REFUSED, type RefundRow, refundUntil, refundable } from "@shared/store.ts";
 import { requestRefund, signOut } from "./actions";
 
@@ -183,9 +183,23 @@ function Refund({ row }: { row: RefundRow & { id: string } }) {
         questions asked. Pro stops working on all your devices once the refund goes through.
       </p>
       <form action={requestRefund.bind(null, row.id)}>
-        <SubmitButton pending="Requesting…" className="button small">
+        <ConfirmSubmit
+          title="Refund your ddugit Pro purchase?"
+          body={
+            <>
+              <p>You get the full amount back to how you paid. This can&apos;t be undone:</p>
+              <ul>
+                <li>Pro turns off on all your devices once Paddle completes the refund.</li>
+                <li>Offline activation codes stop working on computers that go online.</li>
+                <li>To use Pro again later, you&apos;d buy a new license.</li>
+              </ul>
+            </>
+          }
+          confirm="Refund my purchase"
+          pending="Requesting…"
+        >
           Refund my purchase
-        </SubmitButton>
+        </ConfirmSubmit>
       </form>
     </details>
   );
