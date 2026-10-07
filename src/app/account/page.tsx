@@ -6,7 +6,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { AuthSplit } from "@/components/AuthSplit";
 import { Devices } from "@/components/Devices";
 import { OfflineCode } from "@/components/OfflineCode";
-import { ConfirmSubmit, SubmitButton } from "@/components/Pending";
+import { ConfirmSubmit, ForgetNotice, SubmitButton } from "@/components/Pending";
 import { REFUND_REFUSED, type RefundRow, refundUntil, refundable } from "@shared/store.ts";
 import { requestRefund, signOut } from "./actions";
 
@@ -65,6 +65,7 @@ export default async function Account({
       </header>
 
       <div className="account-body">
+        {(notice || refund) && <ForgetNotice />}
         {notice === "removed" && <p className="note ok">Device removed. Its place is free for another computer.</p>}
         {refund === "requested" && (
           <p className="note ok">

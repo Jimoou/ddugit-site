@@ -136,3 +136,14 @@ export function ConfirmSubmit({
     </>
   );
 }
+
+/**
+ * Takes a one-shot notice's query (`?refund=…`, `?notice=…`) and #license off the address once
+ * the page has shown it, so a reload, a bookmark or a shared link doesn't say it again.
+ */
+export function ForgetNotice() {
+  useEffect(() => {
+    window.history.replaceState(window.history.state, "", window.location.pathname);
+  }, []);
+  return null;
+}
