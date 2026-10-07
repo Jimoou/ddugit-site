@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { GuideArticle, InApp, Shell } from "@/components/GuideArticle";
+import { GuideArticle, Shell } from "@/components/GuideArticle";
 import { Screen } from "@/components/Screen";
 import { guideMeta } from "@/lib/seo";
 
@@ -10,118 +10,106 @@ export default function InteractiveRebase() {
   return (
     <GuideArticle
       slug="interactive-rebase"
-      lead="A branch full of “wip” and “fix typo” commits is hard to review. Interactive rebase lets you rewrite it into a few clear commits before anyone else sees it."
+      lead="A branch full of “wip” and “fix typo” commits is hard to review. In ddugit you turn it into a few clear commits by dragging rows in a list: no editor, no todo file."
     >
-      <h2 id="what">What interactive rebase does</h2>
       <p>
-        <code>git rebase -i</code> replays a run of commits one by one, following a list you edit first. For each commit
-        you choose what happens to it: keep it, change its message, fold it into the commit before it, or leave it out.
-        You can also change the order of the list. Git then rebuilds the branch from that plan.
+        This is Git&apos;s interactive rebase (<code>git rebase -i</code>). ddugit builds the plan with you, checks it,
+        and runs the rebase. Every rewritten commit gets a new ID, so do this on commits you haven&apos;t shared yet, or
+        on a branch only you work on.
+      </p>
+
+      <h2 id="open">1. Open the commits you want to tidy</h2>
+      <ol className="steps">
+        <li>On the graph, find the last commit you want to keep as it is: the one just below the commits to change.</li>
+        <li>
+          Right-click it and choose <strong>Rearrange commits after this… (rebase -i)</strong>.
+        </li>
+      </ol>
+      <Screen
+        name="guides/rebase-menu"
+        alt="ddugit's commit menu with “Rearrange commits after this… (rebase -i)” highlighted"
+        caption="Right-click the commit below the ones you want to change."
+      />
+
+      <h2 id="plan">2. Reorder and fold</h2>
+      <p>
+        The <strong>Rearrange commits</strong> sheet lists every commit after it, oldest at the top. The header shows
+        how many commits you start with and how many you&apos;ll end up with.
+      </p>
+      <ul>
+        <li>
+          <strong>Reorder:</strong> drag a row by its handle, or use the up and down arrows.
+        </li>
+        <li>
+          <strong>Fold a fix into the commit above:</strong> choose <strong>Fixup into above</strong> to keep only the
+          message above, or <strong>Squash into above</strong> to combine both messages.
+        </li>
+        <li>
+          <strong>Leave a commit out:</strong> choose <strong>Drop</strong>.
+        </li>
+        <li>
+          <strong>Keep</strong> leaves a commit as it is.
+        </li>
+      </ul>
+      <Screen
+        name="guides/rebase-sheet"
+        alt="The rearrange commits sheet with three commits, one reordered and one set to fixup into the commit above"
+        caption="“Step 2 of 3” folds into “Step 1 of 3”: three commits become two."
+      />
+
+      <h2 id="apply">3. Apply</h2>
+      <p>
+        Click <strong>Apply (rebase)</strong>. The graph redraws with the new commits when it finishes. ddugit checks
+        the plan before it runs, so it won&apos;t let you squash the top commit (it has nothing above it) or drop every
+        commit, and it tells you when the rewrite includes commits you have already pushed.
       </p>
       <p>
-        Every rebuilt commit gets a new ID, even when its contents don&apos;t change. That is why the usual rule is:
-        rewrite only commits that you haven&apos;t shared yet, or that only you work on.
+        If you pushed the branch before, the next push needs to replace the remote branch. ddugit offers that when the
+        push is rejected.
+      </p>
+
+      <h2 id="faster">Moving a single commit</h2>
+      <p>
+        To move just one commit, hold <kbd>Shift</kbd> and drag it onto the commit it should follow. The same sheet
+        opens with the commit already moved, ready to apply.
+      </p>
+
+      <h2 id="merges">Branches with merge commits</h2>
+      <p>
+        If the commits include a merge, ddugit keeps the merges where they are (Git&apos;s <code>--rebase-merges</code>)
+        and lets you reorder and fold commits within each stretch between them.
+      </p>
+
+      <h2 id="stops">If a step stops on a conflict</h2>
+      <p>
+        Reordering can make a commit no longer apply cleanly. The rebase stops, a banner says so, and the conflicted
+        files open in their own sheet: see <Link href="/guides/resolve-merge-conflicts">resolving conflicts</Link>.
+        Click <strong>Continue</strong> when they are fixed, or <strong>Cancel</strong> to put the branch back exactly
+        as it was.
+      </p>
+      <p>
+        Even after a finished rebase, the old commits stay in the undo history. See{" "}
+        <Link href="/guides/undo-reset-reflog">undoing in ddugit</Link> to get them back.
       </p>
 
       <h2 id="command-line">On the command line</h2>
-      <p>Start from the commit just before the first one you want to change. To edit the last four commits:</p>
-      <Shell>{`git rebase -i HEAD~4`}</Shell>
-      <p>Git opens your editor with one line per commit, oldest first:</p>
-      <Shell>{`
-pick a1b2c3d Add search box
-pick d4e5f6a wip
-pick 0718293 Fix typo in search box
-pick 9a8b7c6 Add search results page
-`}</Shell>
-      <p>Change the word at the start of each line, move lines up or down, then save and close the editor:</p>
-      <ul>
-        <li>
-          <code>pick</code>: keep the commit as it is.
-        </li>
-        <li>
-          <code>reword</code>: keep it, but stop to edit its message.
-        </li>
-        <li>
-          <code>squash</code>: fold it into the commit above and combine both messages.
-        </li>
-        <li>
-          <code>fixup</code>: fold it into the commit above and keep only the message above.
-        </li>
-        <li>
-          <code>drop</code>: leave the commit out. Deleting its line does the same.
-        </li>
-      </ul>
+      <p>The same plan with plain Git. Start the rebase from the commit below the ones to change:</p>
+      <Shell>{`git rebase -i HEAD~3`}</Shell>
       <p>
-        To turn the example into two clean commits, mark the “wip” and “Fix typo” lines as <code>fixup</code>. They fold
-        into “Add search box”, and “Add search results page” stays on its own.
-      </p>
-
-      <h3>Fixup commits that sort themselves</h3>
-      <p>
-        If you already know which commit a fix belongs to, commit it with <code>--fixup</code>. A later rebase with{" "}
-        <code>--autosquash</code> moves it under its target and marks it <code>fixup</code> for you:
+        Git opens your editor with one line per commit, oldest first. Change <code>pick</code> to <code>squash</code>,{" "}
+        <code>fixup</code> or <code>drop</code>, move lines to reorder, then save and close:
       </p>
       <Shell>{`
-git commit --fixup a1b2c3d
-git rebase -i --autosquash HEAD~5
+pick b7fd963 Step 1 of 3
+fixup c111ff2 Step 2 of 3
+pick 0c6e865 Step 3 of 3
 `}</Shell>
-
-      <h3>When a step stops</h3>
-      <p>
-        If a reordered commit no longer applies cleanly, the rebase stops with a conflict. Fix the files, stage them and
-        continue, or give up and return the branch to how it was before you started:
-      </p>
+      <p>Resolve a stopped step, or give up, and push the rewritten branch safely:</p>
       <Shell>{`
-git add <file>
-git rebase --continue
-
-git rebase --abort   # back to where you started
+git add <file> && git rebase --continue
+git rebase --abort
+git push --force-with-lease
 `}</Shell>
-      <p>
-        See <Link href="/guides/resolve-merge-conflicts">how to resolve merge conflicts</Link> for the details.
-      </p>
-
-      <h3>After rewriting pushed commits</h3>
-      <p>
-        If the branch was already pushed, a normal push is rejected because the history changed. Push with{" "}
-        <code>--force-with-lease</code>: it overwrites the remote branch only if nobody else has pushed to it since you
-        last fetched.
-      </p>
-      <Shell>{`git push --force-with-lease`}</Shell>
-
-      <InApp>
-        <p>
-          Right-click the commit just below the ones you want to change and choose{" "}
-          <strong>Rearrange commits after this… (rebase -i)</strong>. The commits after it open in a sheet, oldest at
-          the top.
-        </p>
-        <ul>
-          <li>Drag rows to reorder them, or use the up and down buttons.</li>
-          <li>
-            Choose an action for each row: <strong>Keep</strong>, <strong>Squash into above</strong> (combine messages),{" "}
-            <strong>Fixup into above</strong> (discard the message) or <strong>Drop</strong>.
-          </li>
-          <li>
-            Click <strong>Apply (rebase)</strong>. The graph updates when it finishes.
-          </li>
-        </ul>
-        <p>
-          The sheet checks the plan before it runs. It won&apos;t let you squash the top commit, which has nothing above
-          it, or drop every commit, and it warns you when the rewrite includes commits you already pushed. Branches with
-          merge commits in them work too: ddugit keeps the merges in place and lets you reorder within each segment.
-        </p>
-        <p>
-          For a single commit, Shift-drag it on the graph to move it. If a step conflicts, it opens in its own sheet,
-          and <strong>Cancel</strong> in the banner puts the branch back the way it was.
-        </p>
-      </InApp>
-      <Screen name="rebase" alt="ddugit's rearrange commits sheet with commits being reordered and folded" />
-
-      <h2 id="recover">If something went wrong</h2>
-      <p>
-        A finished rebase can still be undone. The commits from before it stay in the reflog for weeks. See{" "}
-        <Link href="/guides/undo-reset-reflog">how to undo in Git</Link> to find them and put the branch back.
-      </p>
     </GuideArticle>
   );
 }

@@ -27,9 +27,9 @@ export const PAGES = {
     priority: 0.8,
   },
   "/guides": {
-    title: "Git guides: rebase, conflicts, cherry-pick and undo",
+    title: "ddugit guides: rebase, conflicts, cherry-pick and undo",
     description:
-      "Short, practical guides to everyday Git: interactive rebase, merge conflicts, cherry-pick and backports, and undoing with reset and the reflog. Command line and ddugit.",
+      "Step-by-step guides to everyday Git in ddugit: interactive rebase, merge conflicts, cherry-pick and backports, and undo with reset and the reflog.",
     priority: 0.7,
   },
   "/contact": {
