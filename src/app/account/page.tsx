@@ -24,8 +24,8 @@ export default async function Account({
     return (
       <AuthSplit
         eyebrow="Account"
-        title="Sign in to ddugit"
-        lead="Buy ddugit Pro and manage your license and devices here."
+        title="Sign in to your account"
+        lead="See your ddugit Pro license, manage the computers it's on, and get offline activation codes."
         configured={hasSupabase()}
         notice={error && <p className="note">Sign-in didn&apos;t go through. Please try again.</p>}
         aside={

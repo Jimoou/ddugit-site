@@ -29,7 +29,18 @@ export default async function Activate({ searchParams }: { searchParams: Promise
       <div className="page prose center">
         <p className="eyebrow">Activate</p>
         <h1>Open this from the app</h1>
-        <p>In ddugit, go to Settings → License and choose “Activate with your ddugit.com account”.</p>
+        <p className="lead">
+          In ddugit, go to Settings → License and choose “Activate with your ddugit.com account”. This page opens with
+          what the app needs.
+        </p>
+        <p className="actions center-actions">
+          <Link href="/download" className="button">
+            Download ddugit
+          </Link>
+          <Link href="/account" className="button">
+            Your account
+          </Link>
+        </p>
       </div>
     );
 

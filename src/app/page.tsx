@@ -153,17 +153,22 @@ export default function Home() {
       <section className="section">
         <header className="section-head">
           <p className="eyebrow">ddugit Pro</p>
-          <h2>For teams that ship from more than one branch</h2>
+          <h2>When your work spans branches and repositories</h2>
           <p>
-            Backports, stacks, release notes and transfers into closed networks. Everything in Free is included. Pay
-            once, use it forever on up to {DEVICES} devices, and get every future update.
+            Backports, stacked branches, release notes and transfers into closed networks, on top of everything in Free.{" "}
+            {usd(PRO_PRICE)} once: use it forever on up to {DEVICES} devices, with every future update.
           </p>
         </header>
         <Screen name="backport" alt="The backport sheet listing commits missing from a branch" />
         <Features items={PRO} />
-        <p className="section-link">
-          <Link href="/pricing">Compare Free and Pro →</Link>
-        </p>
+        <div className="actions center-actions">
+          <Link href="/pricing" className="button primary">
+            Get Pro · {usd(PRO_PRICE)} once
+          </Link>
+          <Link href="/pricing#compare" className="button">
+            Compare Free and Pro
+          </Link>
+        </div>
       </section>
 
       <section className="cta">
