@@ -152,3 +152,10 @@ export function safeNext(next: string | undefined | null): string {
  */
 export const ownsPro = (rows: Pick<LicenseRow, "kind" | "status">[]) =>
   rows.some((r) => r.kind !== "site" && r.status === "active");
+
+/** `path` (a path on this site) with `?notice=<what>` set, for the page to say what just happened. */
+export function withNotice(path: string, what: string): string {
+  const url = new URL(path, HERE);
+  url.searchParams.set("notice", what);
+  return url.pathname + url.search;
+}

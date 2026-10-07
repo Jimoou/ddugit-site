@@ -20,11 +20,13 @@ export default async function Contact({ searchParams }: { searchParams: Promise<
   const start = (topic && Object.hasOwn(TOPICS, topic) ? TOPICS[topic] : undefined) ?? TOPICS.bug;
   return (
     <div className="page prose">
-      <p className="eyebrow">Contact</p>
-      <h1>Report a problem or ask a question</h1>
-      <p className="lead">
-        Tell us what went wrong, or what you&apos;d like to know. Site license inquiries are welcome here too.
-      </p>
+      <header className="center">
+        <p className="eyebrow">Contact</p>
+        <h1>Report a problem or ask a question</h1>
+        <p className="lead">
+          Tell us what went wrong, or what you&apos;d like to know. Site license inquiries are welcome here too.
+        </p>
+      </header>
       <ReportForm key={topic ?? ""} kind={start.kind} message={start.message} />
     </div>
   );

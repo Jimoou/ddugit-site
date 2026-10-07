@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { NOINDEX } from "@/lib/seo";
 import Link from "next/link";
+import { SubmitButton } from "@/components/Pending";
 import { notFound } from "next/navigation";
 import {
   type Filters,
@@ -245,17 +246,19 @@ function Row({ r, filters }: { r: Report; filters: Filters }) {
           )}
           <div className="report-actions">
             {STATUSES.map((s) => (
-              <form key={s} action={setStatus.bind(null, r.id, s, here)}>
-                <button className="button small" disabled={r.status === s}>
+              <form key={s} action={setStatus.bind(null, r.id, s, here)} data-no-progress>
+                <SubmitButton className="button small" disabled={r.status === s} pending="Saving…">
                   Mark {STATUS_LABEL[s].toLowerCase()}
-                </button>
+                </SubmitButton>
               </form>
             ))}
           </div>
-          <form className="report-note" action={saveNote.bind(null, r.id, here)}>
+          <form className="report-note" action={saveNote.bind(null, r.id, here)} data-no-progress>
             <label htmlFor={`note-${r.id}`}>Private note</label>
             <textarea id={`note-${r.id}`} name="note" rows={3} maxLength={5000} defaultValue={r.note ?? ""} />
-            <button className="button small">Save note</button>
+            <SubmitButton className="button small" pending="Saving…">
+              Save note
+            </SubmitButton>
           </form>
         </div>
       </details>

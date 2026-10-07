@@ -1,5 +1,6 @@
 import { removeDevice } from "@/app/account/actions";
 import type { DeviceRow } from "@/lib/activate";
+import { SubmitButton } from "./Pending";
 
 const day = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
@@ -19,7 +20,9 @@ export function Devices({ devices, back, current }: { devices: DeviceRow[]; back
             </p>
           </div>
           <form action={removeDevice.bind(null, d.license_id, d.device_hash, back)}>
-            <button className="button small">Remove</button>
+            <SubmitButton pending="Removing…" className="button small">
+              Remove
+            </SubmitButton>
           </form>
         </li>
       ))}

@@ -156,3 +156,14 @@ test("a device is released only with its own license and device id", () => {
   assert.equal(checkDeactivation(info, HASH)?.status, 400);
   assert.equal(checkDeactivation(null, HASH)?.status, 400);
 });
+
+test("an offline activation code is a lifetime license signed for no device", async () => {
+  const { privateKey, publicKey } = await keys();
+  const text = await signLicense(privateKey, lifetimeLicense(lifetimeRow, "2026-10-07"));
+  const info = await readLicense(publicKey, text);
+  assert.equal(info?.plan, "lifetime");
+  assert.equal(info?.updatesUntil, LIFETIME_UPDATES);
+  assert.equal("device" in (info ?? {}), false);
+  // Refunded later: refresh tells an online app to drop it (a lifetime license "expires" only then).
+  assert.equal(refreshStatus(info!, { status: "refunded", store_test: false }, false), "expired");
+});

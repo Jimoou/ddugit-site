@@ -7,10 +7,10 @@ export const metadata: Metadata = { title: "Thank you", robots: NOINDEX };
 /** Where Paddle's checkout sends the buyer after paying (`successUrl` in `checkoutRequest`). */
 export default function Thanks() {
   return (
-    <div className="page prose">
+    <div className="page prose center">
       <p className="eyebrow">Thank you</p>
       <h1>Welcome to ddugit Pro</h1>
-      <p>
+      <p className="lead">
         Your license is on its way to your account; it usually shows up within a minute. To turn Pro on, open ddugit and
         choose Settings → License → “Activate with your ddugit.com account”.
       </p>

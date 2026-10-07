@@ -6,7 +6,8 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { AuthSplit } from "@/components/AuthSplit";
 import { Devices } from "@/components/Devices";
 import { licenseLabel } from "@/lib/activate";
-import { OfflineActivate } from "@/components/OfflineActivate";
+import { OfflineCode } from "@/components/OfflineCode";
+import { SubmitButton } from "@/components/Pending";
 import { REFUND_DAYS, REFUND_REFUSED, type RefundRow, refundUntil, refundable } from "@shared/store.ts";
 import { requestRefund, signOut } from "./actions";
 
@@ -15,9 +16,9 @@ export const metadata: Metadata = { title: "Account", robots: NOINDEX };
 export default async function Account({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; refund?: string; reason?: string }>;
+  searchParams: Promise<{ error?: string; refund?: string; reason?: string; notice?: string }>;
 }) {
-  const { error, refund, reason } = await searchParams;
+  const { error, refund, reason, notice } = await searchParams;
   const user = hasSupabase() ? (await (await supabaseServer()).auth.getUser()).data.user : null;
 
   if (!user) {
@@ -54,84 +55,113 @@ export default async function Account({
     db.from("admins").select("email").limit(1),
   ]);
   return (
-    <div className="page prose">
-      <p className="eyebrow">Account</p>
-      <h1>Your account</h1>
-      <section className="card">
-        <h3>{name}</h3>
-        <p>{user.email}</p>
-      </section>
-      <h2>Licenses</h2>
-      {refund === "requested" && (
-        <p className="note">
-          Refund requested. Paddle sends the money back to how you paid; Pro turns off on your devices once it goes
-          through.
+    <div className="page account">
+      <header className="page-head center">
+        <p className="eyebrow">Account</p>
+        <h1>Your account</h1>
+        <p className="account-who">
+          <strong>{name}</strong>
+          {name !== user.email && <span className="muted"> · {user.email}</span>}
         </p>
-      )}
-      {refund === "failed" && (
-        // Only our own sentences, by code: the address can't make the page say anything else.
-        <p className="note">
-          {reason && Object.hasOwn(REFUND_REFUSED, reason)
-            ? REFUND_REFUSED[reason as keyof typeof REFUND_REFUSED]
-            : REFUND_REFUSED.failed}
-        </p>
-      )}
-      {licenses?.length ? (
-        licenses.map((l) => {
-          const mine = (devices ?? []).filter((d) => d.license_id === l.id);
-          const max = (l.max_devices as number | null) ?? 3;
-          return (
-            <section key={l.id} id={l.id as string} className="card license">
-              {l.kind === "site" ? (
-                <>
+      </header>
+
+      <div className="account-body">
+        {notice === "removed" && <p className="note ok">Device removed. Its place is free for another computer.</p>}
+        {refund === "requested" && (
+          <p className="note ok">
+            Refund requested. Paddle sends the money back to how you paid; Pro turns off on your devices once it goes
+            through.
+          </p>
+        )}
+        {refund === "failed" && (
+          // Only our own sentences, by code: the address can't make the page say anything else.
+          <p className="note">
+            {reason && Object.hasOwn(REFUND_REFUSED, reason)
+              ? REFUND_REFUSED[reason as keyof typeof REFUND_REFUSED]
+              : REFUND_REFUSED.failed}
+          </p>
+        )}
+
+        <h2 className="section-label">Licenses</h2>
+        {licenses?.length ? (
+          licenses.map((l) => {
+            const mine = (devices ?? []).filter((d) => d.license_id === l.id);
+            const max = (l.max_devices as number | null) ?? 3;
+            const active = l.status === "active";
+            return (
+              <section key={l.id} id={l.id as string} className={active ? "card license" : "card license inactive"}>
+                <div className="license-head">
                   <h3>
-                    Site license · {l.seats} {l.seats === 1 ? "seat" : "seats"}
+                    {l.kind === "site"
+                      ? `Site license · ${l.seats} ${l.seats === 1 ? "seat" : "seats"}`
+                      : licenseLabel(l)}
                   </h3>
-                  <p className="muted small">
-                    In the app, choose Settings → License → “Activate with your ddugit.com account”. Offline? Paste this
-                    text there instead.
-                  </p>
-                  {l.text && l.status === "active" && (
-                    <textarea className="license-text" readOnly rows={3} value={l.text as string} />
-                  )}
-                </>
-              ) : (
-                <>
-                  <h3>
-                    {licenseLabel(l)} · {mine.length} of {max} devices
-                  </h3>
-                  <p>
-                    Paid once. Every future update included.
-                    {l.status !== "active" ? ` · ${STATUS[l.status as string] ?? l.status}` : ""}
-                    {l.store_test ? " · Test order" : ""}
-                  </p>
-                  <p className="muted small">
-                    In the app, choose Settings → License → “Activate with your ddugit.com account”. Moving to a new
-                    computer? Remove the old one here or in its app first.
-                  </p>
-                  <Devices devices={mine} back="/account" />
-                  {l.status === "active" && <OfflineActivate licenseId={l.id as string} />}
-                  <Refund row={l as RefundRow & { id: string }} />
-                </>
-              )}
-            </section>
-          );
-        })
-      ) : (
-        <p>
-          No licenses bought with {user.email} yet. <Link href="/pricing">See pricing</Link>
-        </p>
-      )}
-      {admin?.length ? (
-        <p>
-          <Link href="/admin">Reports dashboard</Link>
-        </p>
-      ) : null}
-      <form action={signOut}>
-        <button className="button">Sign out</button>
-      </form>
+                  <span className="license-badges">
+                    <StatusBadge status={l.status as string} requested={Boolean(l.refund_requested_at)} />
+                    {l.store_test && <span className="badge warn">Test order</span>}
+                  </span>
+                </div>
+                {l.kind === "site" ? (
+                  <>
+                    <p className="muted small">
+                      In the app, choose Settings → License → “Activate with your ddugit.com account”. Offline? Paste
+                      this text there instead.
+                    </p>
+                    {l.text && active && (
+                      <textarea className="license-text" readOnly rows={3} value={l.text as string} />
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="license-facts">
+                      <span>Paid once · every future update included</span>
+                      <span className={mine.length >= max ? "devices-count full" : "devices-count"}>
+                        {mine.length} of {max} devices
+                      </span>
+                    </p>
+                    {active && (
+                      <p className="muted small">
+                        To turn Pro on, open ddugit → Settings → License → “Activate with your ddugit.com account”.
+                        Moving to a new computer? Remove the old one below first.
+                      </p>
+                    )}
+                    <Devices devices={mine} back="/account" />
+                    {active && <OfflineCode licenseId={l.id as string} />}
+                    <Refund row={l as RefundRow & { id: string }} />
+                  </>
+                )}
+              </section>
+            );
+          })
+        ) : (
+          <section className="card empty">
+            <p>No licenses bought with {user.email} yet.</p>
+            <p>
+              <Link href="/pricing" className="button primary small">
+                See pricing
+              </Link>
+            </p>
+          </section>
+        )}
+
+        <div className="account-foot">
+          {admin?.length ? <Link href="/admin">Reports dashboard</Link> : <span />}
+          <form action={signOut}>
+            <SubmitButton pending="Signing out…" className="button small">
+              Sign out
+            </SubmitButton>
+          </form>
+        </div>
+      </div>
     </div>
   );
+}
+
+/** Where a license stands, in colour: active, refund on its way, or turned off. */
+function StatusBadge({ status, requested }: { status: string; requested: boolean }) {
+  if (status === "active")
+    return requested ? <span className="badge warn">Refund requested</span> : <span className="badge ok">Active</span>;
+  return <span className="badge bad">{STATUS[status] ?? status}</span>;
 }
 
 const STATUS: Record<string, string> = {
@@ -143,17 +173,19 @@ const STATUS: Record<string, string> = {
 function Refund({ row }: { row: RefundRow & { id: string } }) {
   const why = refundable(row);
   if (why === "requested" && row.status === "active")
-    return <p className="muted small">Refund requested · Pro turns off once Paddle completes it.</p>;
+    return <p className="muted small">Pro turns off once Paddle completes the refund.</p>;
   if (why) return null;
   return (
-    <details className="refund">
+    <details className="license-action">
       <summary>Request a refund</summary>
       <p className="muted small">
         Within {REFUND_DAYS} days of payment (until {refundUntil(row.created_at)}) you get the full amount back, no
         questions asked. Pro stops working on all your devices once the refund goes through.
       </p>
       <form action={requestRefund.bind(null, row.id)}>
-        <button className="button small">Refund my purchase</button>
+        <SubmitButton pending="Requesting…" className="button small">
+          Refund my purchase
+        </SubmitButton>
       </form>
     </details>
   );

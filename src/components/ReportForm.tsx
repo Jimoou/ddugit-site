@@ -64,7 +64,7 @@ export function ReportForm({
 
   const sending = state.step === "sending";
   return (
-    <form className="report-form" onSubmit={submit}>
+    <form className="report-form" onSubmit={submit} data-no-progress>
       <fieldset className="kind-choice">
         <legend>What is it about?</legend>
         {KINDS.map((k) => (

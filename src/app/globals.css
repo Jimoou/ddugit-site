@@ -24,7 +24,10 @@
   --line-strong: rgba(255, 255, 255, 0.18);
   --text: #ffffff;
   --text-2: #e8e8ee;
-  --muted: #c2c2cc;
+  /* Secondary text: dimmer than --text-2, so what matters stands out (8:1 on black). */
+  --muted: #a3a3b2;
+  --ok: #4ade80;
+  --bad: #ff7a7a;
   --ui: #6d5ae6;
   --ui-hover: #7c6af0;
   --cyan: #22e8ff;
@@ -1478,21 +1481,186 @@ main:has(> .auth) {
   margin-top: 24px;
 }
 
-/* Account: a license's offline activation and refund, folded away until asked for */
-.license details.offline,
-.license details.refund {
+/* Working on it: the bar at the top while the next page loads, spinners, the loading page */
+.nav-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  width: 0;
+  height: 2px;
+  background: var(--cyan);
+  box-shadow: 0 0 8px rgba(var(--signal), 0.8);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    width 0.2s ease,
+    opacity 0.3s ease;
+}
+.nav-progress.on {
+  width: 85%;
+  opacity: 1;
+  transition:
+    width 8s cubic-bezier(0.1, 0.7, 0.2, 1),
+    opacity 0.1s ease;
+}
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex: none;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2s;
+  }
+  .nav-progress.on {
+    transition: none;
+  }
+}
+.spinner-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.page-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 45vh;
+  color: var(--muted);
+}
+button[aria-busy="true"] {
+  cursor: progress;
+}
+
+/* Status in colour: active, waiting, turned off */
+.badge.ok {
+  border-color: rgba(74, 222, 128, 0.45);
+  color: var(--ok);
+}
+.badge.warn {
+  border-color: rgba(255, 184, 77, 0.45);
+  color: var(--amber);
+}
+.badge.bad {
+  border-color: rgba(255, 122, 122, 0.45);
+  color: var(--bad);
+}
+.note.ok {
+  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.05);
+}
+
+/* Centered pages (activate, done, thanks, checkout): text in the middle, lists still read left to right */
+.prose.center .card,
+.prose.center .devices {
+  text-align: left;
+}
+.prose.center .lead {
+  margin-left: auto;
+  margin-right: auto;
+}
+.prose header.center {
+  margin-bottom: 32px;
+}
+
+/* Account: who, then each license as a card with its status, devices and actions */
+.account-who {
+  margin: 0;
+  font-size: 16px;
+}
+.account-who strong {
+  color: var(--text);
+}
+.account-body {
+  max-width: 760px;
+  margin: 0 auto;
+}
+.section-label {
+  margin: 8px 0 12px;
+  color: var(--muted);
+  font: 600 12px/1.4 var(--sans);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.license-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 10px;
+}
+.license-head h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 20px;
+}
+.license-badges {
+  display: inline-flex;
+  gap: 8px;
+}
+.card.license .license-facts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-2);
+}
+.devices-count {
+  color: var(--text);
+  font-weight: 600;
+}
+.devices-count.full {
+  color: var(--amber);
+}
+.card.license.inactive {
+  opacity: 0.75;
+}
+.card .muted {
+  color: var(--muted);
+}
+.license-action {
   margin-top: 16px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
 }
-.license details summary {
+.license-action summary {
   cursor: pointer;
-  color: var(--text-2);
+  color: var(--text);
   font-size: 14px;
+  font-weight: 600;
 }
-.license .offline-form {
+.license-action[open] summary {
+  margin-bottom: 8px;
+}
+.license-action .button {
   margin-top: 12px;
 }
-.license .offline-form .field {
-  margin-bottom: 12px;
+.actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.card.empty {
+  text-align: center;
+}
+.account-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 32px;
+}
+.account-foot form {
+  margin: 0;
 }
