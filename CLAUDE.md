@@ -6,7 +6,7 @@ ddugit.com 사이트. Next.js 16 (App Router, `src/`), Netlify, Supabase.
 
 - 명령: `npm run check`(tsc + eslint + prettier), `npm run build`. push 전에 둘 다 통과시킨다
 - 사이트 문구는 영어로 고정(2026-10-04 결정), 코드·주석·커밋도 영어(Conventional Commits)
-- 디자인은 데스크톱 앱과 같은 언어: 우주 배경, 검정 크롬, 모서리 괄호·스캔라인 패널, 보라색 주 버튼(잘린 모서리). 토큰은 `globals.css` 맨 위
+- 디자인은 데스크톱 앱(frame A)과 같은 언어: 그래파이트 면(`--chrome`·`--bg`·`--surface`), 둥근 모서리(6·8px), 밝게 채운 주 버튼 하나(`--ui`), 포커스는 `--focus`. 네온 색(`--cyan` 등)은 데이터(상태·미터)에만, 크롬의 빛 번짐·괄호·스캔라인·보라색은 쓰지 않는다. 우주는 앱 화면과 로그인 그림 안에만. 토큰은 `globals.css` 맨 위
 - 앱 화면은 `public/screens/*.webp`(데모 모드를 영어로 2x 캡처). 앱 UI가 바뀌면 다시 찍는다
 - 사이트 전체 값(이름, 가격, 연락처)은 `src/site.ts` 한 곳에 둔다
 - 스타일은 `src/app/globals.css` 하나. Tailwind는 쓰지 않는다
