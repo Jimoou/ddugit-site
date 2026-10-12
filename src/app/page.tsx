@@ -13,7 +13,7 @@ const FEATURES: Feature[] = [
   {
     icon: "graph",
     name: "A graph you can move around",
-    body: "Pan, zoom and rotate your history. Each branch keeps its lane and color, so large repositories stay readable.",
+    body: "Pan, zoom and rotate your history. Each branch keeps its lane and color, and each message sits under its commit. Choose a gauge, metro or space look.",
   },
   {
     icon: "merge",
