@@ -343,8 +343,10 @@ kbd {
   opacity: 0.5;
   pointer-events: none;
 }
+/* Follows the button's ink, so it reads on the light primary key too. */
 .button .size {
-  color: rgba(255, 255, 255, 0.72);
+  color: inherit;
+  opacity: 0.72;
   font-size: 13px;
   font-weight: 500;
 }
