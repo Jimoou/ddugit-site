@@ -141,7 +141,7 @@ export function guideData(slug: GuideSlug): Record<string, unknown>[] {
       datePublished: published,
       dateModified: updated,
       image: `${SITE.url}${SHARE_IMAGE.url}`,
-      author: { "@type": "Person", name: SITE.seller },
+      author: { "@type": "Organization", name: SITE.maker },
       publisher: { "@type": "Organization", name: SITE.name, url: SITE.url },
       about: { "@type": "SoftwareApplication", name: "Git" },
     },

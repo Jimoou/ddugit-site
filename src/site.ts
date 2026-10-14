@@ -9,8 +9,10 @@ export const SITE = {
   tagline: "Your Git history, as a graph you can work on.",
   url: "https://ddugit.com",
   contact: CONTACT_EMAIL,
-  /** Who sells ddugit: the legal name on the Paddle account (an individual), named in the terms. */
-  seller: "Kim Jiwoon",
+  /** Who makes ddugit: Grapipe, the name the developer publishes under (not a company). Shown everywhere. */
+  maker: "Grapipe",
+  /** The individual behind Grapipe, the legal name on the Paddle account. Only the terms and privacy name it. */
+  legalName: "Kim Jiwoon",
 };
 
 /** Pro: one payment in US dollars, used forever with every future update, on up to `DEVICES` devices. */
