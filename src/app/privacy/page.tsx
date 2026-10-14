@@ -6,7 +6,7 @@ import { SITE } from "@/site";
 export const metadata: Metadata = pageMeta("/privacy");
 
 /** Effective date of this policy; change it with every material edit. */
-const UPDATED = "October 6, 2026";
+const UPDATED = "October 14, 2026";
 
 export default function Privacy() {
   return (
@@ -15,8 +15,9 @@ export default function Privacy() {
       <h1>Privacy</h1>
       <p className="muted">Last updated {UPDATED}</p>
       <p>
-        {SITE.seller} (&ldquo;we&rdquo;) makes ddugit and runs {SITE.url.replace("https://", "")}. This page says what
-        we collect, why, and who else handles it.
+        {SITE.maker} (&ldquo;we&rdquo;), the name under which {SITE.legalName}, an individual developer, publishes
+        software, makes ddugit and runs {SITE.url.replace("https://", "")}. This page says what we collect, why, and who
+        else handles it.
       </p>
 
       <h2>The app</h2>
@@ -64,7 +65,7 @@ export default function Privacy() {
 
       <h2>Contact</h2>
       <p>
-        {SITE.seller} · <a href={`mailto:${SITE.contact}`}>{SITE.contact}</a>
+        {SITE.maker} ({SITE.legalName}) · <a href={`mailto:${SITE.contact}`}>{SITE.contact}</a>
       </p>
     </div>
   );

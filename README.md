@@ -59,7 +59,7 @@ npm run build
 
 1. 이 저장소 Secrets: `SUPABASE_ACCESS_TOKEN`(supabase.com → Account → Access Tokens), `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`
 2. Supabase → Edge Functions → Secrets: `DDUGIT_LICENSE_PRIVATE_KEY`(ddugit `scripts/license.mjs keygen`이 만든 PEM 전체), `DDUGIT_LICENSE_PUBKEY`(같은 키의 공개키, ddugit 저장소 Variables와 같은 값)
-3. 판매(Paddle Billing, 판매자: 개인 `site.ts`의 `SITE.seller`). 먼저 sandbox(sandbox-vendors.paddle.com)에서 끝까지 해 보고, live 계정(vendors.paddle.com)에서 같은 순서로 한 번 더: 0. Claude Code: `.claude/settings.json`이 Paddle 공식 플러그인(`paddle@claude-community`: 웹훅·체크아웃·sandbox 테스트·상품 설정 안내)을 켠다. 플러그인의 MCP 서버(`mcp.paddle.com`, `sandbox-mcp.paddle.com`, `paddlehq.mcp.kapa.ai`)는 클라우드 세션 네트워크에서 그 호스트를 허용해야 붙고, sandbox 서버는 API 키를 `/plugin configure paddle@claude-community`로 넣는다(채팅·저장소에 넣지 않는다)
+3. 판매(Paddle Billing, 판매자: 개인 `site.ts`의 `SITE.legalName`, 화면의 이름은 활동명 `SITE.maker`(Grapipe)). 먼저 sandbox(sandbox-vendors.paddle.com)에서 끝까지 해 보고, live 계정(vendors.paddle.com)에서 같은 순서로 한 번 더: 0. Claude Code: `.claude/settings.json`이 Paddle 공식 플러그인(`paddle@claude-community`: 웹훅·체크아웃·sandbox 테스트·상품 설정 안내)을 켠다. 플러그인의 MCP 서버(`mcp.paddle.com`, `sandbox-mcp.paddle.com`, `paddlehq.mcp.kapa.ai`)는 클라우드 세션 네트워크에서 그 호스트를 허용해야 붙고, sandbox 서버는 API 키를 `/plugin configure paddle@claude-community`로 넣는다(채팅·저장소에 넣지 않는다)
    1. Checkout → Website approval: `ddugit.com`을 추가하고 심사를 받는다(약관·개인정보·가격·환불 14일·판매자 이름·연락처가 사이트에 있어야 한다)
    2. Catalog → Products: "ddugit Pro"(세금 분류 `digital-goods` = 내려받는 소프트웨어. **첫 판매 뒤에는 바꿀 수 없다.** 기본값이 아닌 분류라 대시보드에서 승인이 필요할 수 있다), Price: One-time `$29 USD`(`site.ts`의 `PRO_PRICE`와 같게)
    3. Checkout → Checkout settings → Default payment link: `https://ddugit.com/checkout`
@@ -86,6 +86,6 @@ npm run build
 
 1. Supabase → Edge Functions → Secrets: `REPORT_SALT` = 임의의 긴 값(예: `openssl rand -hex 32`). 바꾸면 그때부터 속도 제한이 새로 센다
 2. 전달 비밀 `REPORT_FORWARD_SECRET` = 임의의 긴 값(`openssl rand -hex 32`) 하나를 **두 곳에 같게**: Supabase → Edge Functions → Secrets, 그리고 Netlify → Site configuration → Environment variables(서버 전용, `NEXT_PUBLIC_` 아님, 넣은 뒤 다시 배포). 둘 중 하나라도 없으면 신고가 503으로 막힌다. 바꿀 때는 두 곳을 함께 바꾼다(그 사이 신고는 403)
-3. 마이그레이션과 함수는 `main`에 머지되면 Supabase workflow가 올린다(`20261007000000_reports.sql`, `report` 함수). 소유자(`kfromh0136@gmail.com`)는 마이그레이션이 관리자로 넣는다
+3. 마이그레이션과 함수는 `main`에 머지되면 Supabase workflow가 올린다(`20261007000000_reports.sql`, `report` 함수). 소유자의 로그인 이메일은 마이그레이션이 관리자로 넣는다(문의 주소 `support@grapipe.com`과는 다르다)
 4. 관리자 추가: Supabase → SQL Editor에서 `insert into public.admins (email) values ('someone@example.com');`(그 사람이 ddugit.com에 로그인하는 GitHub·Google 계정의 이메일). 빼기는 `delete from public.admins where email = '…';`
 5. 오래된 신고 지우기(필요할 때): `delete from public.reports where status = 'done' and created_at < now() - interval '1 year';`

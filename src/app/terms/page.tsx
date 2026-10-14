@@ -15,9 +15,10 @@ export default function Terms() {
       <h1>Terms of use</h1>
       <p className="muted">Last updated {UPDATED}</p>
       <p>
-        ddugit is a desktop Git client for macOS and Windows, made and sold by {SITE.seller}, an individual developer
-        (&ldquo;we&rdquo;). These terms cover the ddugit app, ddugit Pro and this website,{" "}
-        {SITE.url.replace("https://", "")}. By downloading ddugit or buying Pro you agree to them.
+        ddugit is a desktop Git client for macOS and Windows, made and sold by {SITE.maker}, the name under which{" "}
+        {SITE.legalName}, an individual developer, publishes software (&ldquo;we&rdquo;). These terms cover the ddugit
+        app, ddugit Pro and this website, {SITE.url.replace("https://", "")}. By downloading ddugit or buying Pro you
+        agree to them.
       </p>
 
       <h2 id="free">1. ddugit Free</h2>
@@ -81,7 +82,7 @@ export default function Terms() {
 
       <h2 id="contact">Contact</h2>
       <p>
-        {SITE.seller} · <a href={`mailto:${SITE.contact}`}>{SITE.contact}</a> ·{" "}
+        {SITE.maker} ({SITE.legalName}) · <a href={`mailto:${SITE.contact}`}>{SITE.contact}</a> ·{" "}
         <Link href="/contact">contact form</Link>
       </p>
     </div>

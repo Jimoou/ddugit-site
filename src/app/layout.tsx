@@ -68,7 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </nav>
           </div>
           <p className="bottom-legal">
-            © {new Date().getFullYear()} {SITE.seller} · {SITE.name}
+            © {new Date().getFullYear()} {SITE.maker} · {SITE.name}
           </p>
         </footer>
       </body>
