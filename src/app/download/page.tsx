@@ -37,15 +37,14 @@ export default function Download() {
           <p className="muted small">Windows 10 or later · 64-bit</p>
           <ol className="steps">
             <li>
-              Run the downloaded <code>.exe</code>.
+              Choose <strong>Windows (Microsoft Store)</strong> and install ddugit from the Store.
             </li>
-            <li>
-              If &ldquo;Windows protected your PC&rdquo; appears, choose <strong>More info</strong>, then{" "}
-              <strong>Run anyway</strong>.
-            </li>
+            <li>Open it from the Start menu. The Store keeps it up to date.</li>
           </ol>
           <p className="note">
-            The Windows build isn&apos;t code-signed yet, which is why Windows shows that warning on first launch.
+            No Microsoft Store on your PC? Use the <code>.exe</code> installer under the buttons. It isn&apos;t
+            code-signed, so Windows may say &ldquo;Windows protected your PC&rdquo;: choose <strong>More info</strong>,
+            then <strong>Run anyway</strong>.
           </p>
         </article>
       </section>

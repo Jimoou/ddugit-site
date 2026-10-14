@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { DOWNLOADS_URL } from "@/site";
+import { DOWNLOADS_URL, MICROSOFT_STORE_URL } from "@/site";
 import { type Downloads, isDownloads, megabytes, osOf } from "@/downloads";
 
 type State = { kind: "loading" } | { kind: "ready"; data: Downloads } | { kind: "missing" };
 
-const LABEL = { macos: "macOS (.dmg)", windows: "Windows (.exe)" } as const;
+const button = (primary: boolean) => (primary ? "button primary large" : "button large");
 
 export default function DownloadButtons() {
   const [state, setState] = useState<State>(DOWNLOADS_URL ? { kind: "loading" } : { kind: "missing" });
@@ -24,23 +24,33 @@ export default function DownloadButtons() {
       .catch(() => setState({ kind: "missing" }));
   }, []);
 
-  if (state.kind === "loading") return <p className="muted">Checking the latest version…</p>;
-  if (state.kind === "missing") return <p className="note">Installers are being prepared and will be here shortly.</p>;
+  const data = state.kind === "ready" ? state.data : null;
+  const windowsFirst = os === "windows";
+  // Windows comes from the Microsoft Store, which doesn't depend on the download manifest.
+  const store = (
+    <a key="store" href={MICROSOFT_STORE_URL} className={button(windowsFirst)}>
+      Windows (Microsoft Store)
+    </a>
+  );
+  const mac = data && (
+    <a key="mac" href={data.files.macos.url} className={button(!windowsFirst)}>
+      macOS (.dmg) <span className="size">{megabytes(data.files.macos.size)}</span>
+    </a>
+  );
 
-  const { data } = state;
-  const order: (keyof Downloads["files"])[] = os === "windows" ? ["windows", "macos"] : ["macos", "windows"];
   return (
     <>
-      <div className="actions">
-        {order.map((k, i) => (
-          <a key={k} href={data.files[k].url} className={i === 0 ? "button primary large" : "button large"}>
-            {LABEL[k]} <span className="size">{megabytes(data.files[k].size)}</span>
-          </a>
-        ))}
-      </div>
-      <p className="muted small download-meta">
-        Version {data.version} · {data.date.slice(0, 10)}
-      </p>
+      <div className="actions">{windowsFirst ? [store, mac] : [mac, store]}</div>
+      {state.kind === "loading" && <p className="muted small download-meta">Checking the latest version…</p>}
+      {state.kind === "missing" && (
+        <p className="note">The macOS installer is being prepared and will be here shortly.</p>
+      )}
+      {data && (
+        <p className="muted small download-meta">
+          Version {data.version} · {data.date.slice(0, 10)} · No Microsoft Store?{" "}
+          <a href={data.files.windows.url}>Windows installer (.exe, {megabytes(data.files.windows.size)})</a>
+        </p>
+      )}
     </>
   );
 }
