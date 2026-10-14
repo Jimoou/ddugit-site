@@ -7,16 +7,26 @@ import { Spinner } from "./Pending";
 /**
  * "Offline activation code" on a license (as IntelliJ does it): a button that opens a dialog
  * with the license as text, to paste into ddugit on a computer without internet
- * (Settings → License → Paste license). The code is made when the dialog first opens.
+ * (Settings → License → Paste license). The code is made when the dialog first opens, except
+ * while the license can still be refunded (`refundUntil`): the first code ends the refund, so
+ * the dialog asks first and makes it once the buyer agrees.
  */
-export function OfflineCode({ licenseId }: { licenseId: string }) {
+export function OfflineCode({ licenseId, refundUntil }: { licenseId: string; refundUntil?: string }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [result, setResult] = useState<OfflineResult>(null);
   const [pending, start] = useTransition();
   const [copied, setCopied] = useState(false);
+  const [asking, setAsking] = useState(Boolean(refundUntil));
+  const make = (noRefund: boolean) =>
+    start(async () => {
+      const answer = await getOfflineCode(licenseId, noRefund);
+      // The server knows best whether the refund is still open (another tab may have made a code).
+      setAsking(answer?.code === "confirm");
+      setResult(answer?.code === "confirm" ? null : answer);
+    });
   const open = () => {
     ref.current?.showModal();
-    if (!result?.license) start(async () => setResult(await getOfflineCode(licenseId)));
+    if (!asking && !result?.license) make(false);
   };
   const copy = (text: string) =>
     navigator.clipboard?.writeText(text).then(
@@ -44,10 +54,24 @@ export function OfflineCode({ licenseId }: { licenseId: string }) {
         <div className="confirm-box">
           <h3>Offline activation code</h3>
           <div className="confirm-body">
-            <p>
-              For a computer without internet: in ddugit, open Settings → License → Paste license and paste this code.
-              Keep it to your own computers.
-            </p>
+            {asking ? (
+              <>
+                <p>
+                  <strong>Making an offline code ends your refund.</strong> A computer that never goes online keeps Pro
+                  after a refund, so once a code exists this license can&apos;t be refunded
+                  {refundUntil ? ` (you could until ${refundUntil})` : ""}.
+                </p>
+                <p className="muted small">
+                  Only need Pro on computers with internet? Close this and use “Activate with your ddugit.com account”
+                  in the app instead: the refund stays open.
+                </p>
+              </>
+            ) : (
+              <p>
+                For a computer without internet: in ddugit, open Settings → License → Paste license and paste this code.
+                Keep it to your own computers.
+              </p>
+            )}
             {pending && <Spinner label="Making the code…" />}
             {result?.error && <p className="note">{result.error}</p>}
             {result?.license && (
@@ -62,6 +86,11 @@ export function OfflineCode({ licenseId }: { licenseId: string }) {
             )}
           </div>
           <div className="confirm-actions">
+            {asking && (
+              <button type="button" className="button small primary" disabled={pending} onClick={() => make(true)}>
+                Make the code, no refund
+              </button>
+            )}
             {result?.license && (
               <>
                 <button type="button" className="button small" onClick={() => download(result.license!)}>

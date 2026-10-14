@@ -159,7 +159,7 @@ test("sandbox notifications go back to the sandbox API", () => {
   assert.equal(paddleApi(""), "https://api.paddle.com");
 });
 
-test("a store license can be refunded by its buyer for 14 days, once, while active", () => {
+test("a store license can be refunded by its buyer for 14 days, once, while active, until an offline code is made", () => {
   const bought = "2026-10-01T12:00:00Z";
   const row = {
     kind: "personal",
@@ -167,12 +167,14 @@ test("a store license can be refunded by its buyer for 14 days, once, while acti
     store_order_id: "txn_1",
     created_at: bought,
     refund_requested_at: null,
+    offline_issued_at: null,
   };
   const at = (iso: string) => Date.parse(iso);
   assert.equal(refundable(row, at("2026-10-01T13:00:00Z")), null);
   assert.equal(refundable(row, at("2026-10-15T12:00:00Z")), null);
   assert.equal(refundable(row, at("2026-10-15T12:00:01Z")), "too-late");
   assert.equal(refundable({ ...row, refund_requested_at: "2026-10-02T00:00:00Z" }, at(bought)), "requested");
+  assert.equal(refundable({ ...row, offline_issued_at: "2026-10-02T00:00:00Z" }, at(bought)), "offline");
   assert.equal(refundable({ ...row, status: "refunded" }, at(bought)), "inactive");
   assert.equal(refundable({ ...row, store_order_id: null }, at(bought)), "not-bought");
   assert.equal(refundable({ ...row, store_order_id: "1234" }, at(bought)), "not-bought");

@@ -52,20 +52,24 @@ export async function requestRefund(licenseId: string) {
   redirect(`/account?${q}#${licenseId}`);
 }
 
-/** What the offline activation panel shows after a try: the code, or why not. */
-export type OfflineResult = { license?: string; error?: string } | null;
+/** What the offline activation panel shows after a try: the code, or why not (`confirm`: agree to no refund first). */
+export type OfflineResult = { license?: string; error?: string; code?: string } | null;
 
 /**
  * "Get offline activation code": license-offline signs the signed-in user's lifetime license
- * for no device, to paste into ddugit on a computer without internet.
+ * for no device, to paste into ddugit on a computer without internet. While the license could
+ * still be refunded the first code needs `noRefund` (the buyer agreed that it ends the refund).
  */
-export async function getOfflineCode(licenseId: string): Promise<OfflineResult> {
+export async function getOfflineCode(licenseId: string, noRefund = false): Promise<OfflineResult> {
   const db = await supabaseServer();
   const { data } = await db.auth.getUser();
   const token = (await db.auth.getSession()).data.session?.access_token;
   if (!data.user || !token) return { error: "Sign in again." };
-  const { data: answer } = await callFunction("license-offline", { license: licenseId }, token);
+  const { data: answer } = await callFunction("license-offline", { license: licenseId, noRefund }, token);
   return typeof answer.license === "string"
     ? { license: answer.license }
-    : { error: String(answer.error ?? "Couldn't make the code. Try again.") };
+    : {
+        error: String(answer.error ?? "Couldn't make the code. Try again."),
+        code: typeof answer.code === "string" ? answer.code : undefined,
+      };
 }

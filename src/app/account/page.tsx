@@ -44,7 +44,7 @@ export default async function Account({
     db
       .from("licenses")
       .select(
-        "id, kind, plan, seats, status, max_devices, text, store_test, store_order_id, created_at, refund_requested_at",
+        "id, kind, plan, seats, status, max_devices, text, store_test, store_order_id, created_at, refund_requested_at, offline_issued_at",
       )
       .order("created_at", { ascending: false }),
     db
@@ -138,7 +138,16 @@ export default async function Account({
                         </div>
                         <Devices devices={mine} back="/account" />
                         <div className="license-actions">
-                          {!l.refund_requested_at && <OfflineCode licenseId={l.id as string} />}
+                          {!l.refund_requested_at && (
+                            <OfflineCode
+                              licenseId={l.id as string}
+                              refundUntil={
+                                refundable(l as RefundRow)
+                                  ? undefined
+                                  : day(`${refundUntil(l.created_at as string)}T00:00:00Z`)
+                              }
+                            />
+                          )}
                           <Refund row={l as RefundRow & { id: string }} />
                         </div>
                       </>
@@ -187,6 +196,8 @@ function Refund({ row }: { row: RefundRow & { id: string } }) {
   const why = refundable(row);
   if (why === "requested")
     return <p className="muted small">Refund on its way: Pro turns off once Paddle completes it.</p>;
+  if (why === "offline" && refundable({ ...row, offline_issued_at: null }) === null)
+    return <p className="muted small">No refund: an offline activation code was made for this license.</p>;
   if (why) return null;
   return (
     <form action={requestRefund.bind(null, row.id)}>
