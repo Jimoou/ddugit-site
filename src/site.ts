@@ -26,6 +26,13 @@ export { DEVICES_PER_COPY as DEVICES } from "../supabase/functions/_shared/store
 export const DOWNLOADS_URL = process.env.NEXT_PUBLIC_DOWNLOADS_URL ?? "";
 
 /**
+ * ddugit in the Microsoft Store: Windows' main download. Microsoft signs the package and the
+ * Store keeps it up to date, so it installs without a SmartScreen warning. The unsigned `.exe`
+ * from `downloads.json` stays for PCs without the Store.
+ */
+export const MICROSOFT_STORE_URL = "https://apps.microsoft.com/detail/9MW648MCPQPQ";
+
+/**
  * Paddle Billing, which sells Pro (merchant of record). Public values only, from Netlify's
  * environment: the client-side token (Developer tools → Authentication; `test_…` in the sandbox,
  * `live_…` live), the Pro price (`pri_…`) and which environment they belong to.
