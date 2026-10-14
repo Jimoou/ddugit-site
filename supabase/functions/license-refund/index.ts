@@ -1,7 +1,8 @@
 // POST { license } with the buyer's session (Authorization: Bearer <access token>)
 //   → { ok: true, status } | { error, code }
 //
-// "Request a refund" on ddugit.com/account: within REFUND_DAYS of payment, the buyer asks
+// "Request a refund" on ddugit.com/account: within REFUND_DAYS of payment, and while no offline
+// activation code has been made for it (license-offline), the buyer asks
 // Paddle for a full refund of their license's transaction. The license is stamped
 // `refund_requested_at` first (only if it wasn't already, so a double click makes one
 // request) and un-stamped if Paddle refuses. Paddle approves refunds (sandbox: within
@@ -34,21 +35,27 @@ Deno.serve(
 
     const { data: row } = await db
       .from("licenses")
-      .select("id, email, kind, status, store_order_id, created_at, refund_requested_at")
+      .select("id, email, kind, status, store_order_id, created_at, refund_requested_at, offline_issued_at")
       .eq("id", id)
       .maybeSingle();
     if (!row || String(row.email).toLowerCase() !== email) return json({ error: "No such license." }, 404);
     const why = refundable(row as RefundRow);
     if (why) return json({ error: REFUND_REFUSED[why], code: why }, 409);
 
-    // Claim the request (once, even with two clicks), then ask Paddle.
+    // Claim the request (once, even with two clicks, and only while no offline code has been made:
+    // license-offline stamps the other way round, so one of the two wins), then ask Paddle.
     const { data: claimed } = await db
       .from("licenses")
       .update({ refund_requested_at: new Date().toISOString() })
       .eq("id", id)
       .is("refund_requested_at", null)
+      .is("offline_issued_at", null)
       .select("id");
-    if (!claimed?.length) return json({ error: REFUND_REFUSED.requested, code: "requested" }, 409);
+    if (!claimed?.length) {
+      const { data: now } = await db.from("licenses").select("offline_issued_at").eq("id", id).maybeSingle();
+      const code = now?.offline_issued_at ? "offline" : "requested";
+      return json({ error: REFUND_REFUSED[code], code }, 409);
+    }
 
     const res = await fetch(`${paddleApi(optionalEnv("PADDLE_ENV"))}/adjustments`, {
       method: "POST",

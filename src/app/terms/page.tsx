@@ -6,7 +6,7 @@ import { DEVICES, PRO_PRICE, SITE, usd } from "@/site";
 export const metadata: Metadata = pageMeta("/terms");
 
 /** Effective date of these terms; change it with every material edit. */
-const UPDATED = "October 7, 2026";
+const UPDATED = "October 14, 2026";
 
 export default function Terms() {
   return (
@@ -51,10 +51,12 @@ export default function Terms() {
       <h2 id="refunds">4. Refunds</h2>
       <p>
         If ddugit Pro isn&apos;t right for you, ask for a refund within 14 days of payment and you get the full amount
-        back, no questions asked. Request it on your account page, through Paddle (the link in your receipt email) or by
-        writing to us. Once the refund goes through, the license is turned off and Pro stops working on your devices at
-        their next check. A computer activated offline never checks: after a refund you must stop using Pro there and
-        remove its license (Settings → License). The <Link href="/refunds">refund policy</Link> has the details.
+        back, no questions asked, unless you made an offline activation code for that license (a computer that never
+        goes online would keep Pro, so the first code ends the refund). Request it on your account page, through Paddle
+        (the link in your receipt email) or by writing to us. Once the refund goes through, the license is turned off
+        and Pro stops working on your devices at their next check. A computer activated offline never checks: after a
+        refund you must stop using Pro there and remove its license (Settings → License). The{" "}
+        <Link href="/refunds">refund policy</Link> has the details.
       </p>
 
       <h2 id="use">5. Using ddugit</h2>

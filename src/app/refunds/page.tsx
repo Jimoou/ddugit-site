@@ -7,7 +7,7 @@ import { REFUND_DAYS } from "@shared/store.ts";
 export const metadata: Metadata = pageMeta("/refunds");
 
 /** Effective date of this policy; change it with every material edit (and the terms' refund section with it). */
-const UPDATED = "October 7, 2026";
+const UPDATED = "October 14, 2026";
 
 export default function Refunds() {
   return (
@@ -21,6 +21,13 @@ export default function Refunds() {
         ddugit Pro is a one-time purchase of {usd(PRO_PRICE)} (plus sales tax or VAT where it applies). If it isn&apos;t
         right for you, ask for a refund within {REFUND_DAYS} days of payment and you get the full amount back, tax
         included, no questions asked. There is no subscription, so there is nothing to cancel.
+      </p>
+
+      <h2 id="offline">Offline activation codes</h2>
+      <p>
+        An offline activation code turns Pro on for a computer that never goes online, and a refund can&apos;t turn it
+        off there. So making the first offline code for a license ends its refund. Your account page asks before it
+        makes one. Activating with your ddugit.com account keeps the refund open.
       </p>
 
       <h2 id="how">How to ask</h2>

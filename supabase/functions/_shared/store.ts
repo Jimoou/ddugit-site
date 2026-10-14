@@ -212,20 +212,24 @@ export interface RefundRow {
   store_order_id: string | null;
   created_at: string;
   refund_requested_at: string | null;
+  /** When the first offline activation code was made: that ends the refund (it can't be taken back offline). */
+  offline_issued_at: string | null;
 }
 
 /** Why a license can't be refunded from the account page; null when it can. */
-export type NotRefundable = "not-bought" | "inactive" | "requested" | "too-late";
+export type NotRefundable = "not-bought" | "inactive" | "requested" | "offline" | "too-late";
 
 /**
  * Whether the buyer can ask for a refund of this license themselves: a license bought in the
- * Paddle store (`txn_…`), still active, not asked for yet, within `REFUND_DAYS` of its purchase
- * (the row is made when the payment completes). Anything else goes through the contact page.
+ * Paddle store (`txn_…`), still active, not asked for yet, with no offline activation code made
+ * (a computer that never goes online would keep Pro after the refund), within `REFUND_DAYS` of its
+ * purchase (the row is made when the payment completes). Anything else goes through the contact page.
  */
 export function refundable(row: RefundRow, now = Date.now()): NotRefundable | null {
   if (row.kind === "site" || !row.store_order_id?.startsWith("txn_")) return "not-bought";
   if (row.status !== "active") return "inactive";
   if (row.refund_requested_at) return "requested";
+  if (row.offline_issued_at) return "offline";
   const bought = Date.parse(row.created_at);
   if (!(now - bought <= REFUND_DAYS * 86_400_000)) return "too-late";
   return null;
@@ -236,6 +240,7 @@ export const REFUND_REFUSED: Record<NotRefundable | "failed" | "unconfirmed", st
   "not-bought": "This license wasn't bought in the store. Write to us instead.",
   inactive: "This license is no longer active.",
   requested: "A refund for this license has already been requested.",
+  offline: "An offline activation code was made for this license, so it can't be refunded.",
   "too-late": "The 14-day refund period for this license is over. Write to us if something went wrong.",
   failed: "The refund couldn't be requested right now. Try again later, or write to us.",
   unconfirmed:

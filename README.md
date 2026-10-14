@@ -71,7 +71,7 @@ npm run build
 
 구매 흐름: 가격 페이지 → `/checkout`(로그인 안 했으면 로그인 후 돌아옴. 로그인 없는 결제는 없앴다: 계정 하나에 Pro 하나. 이미 Pro가 있으면 결제창 대신 계정 페이지로 안내) → 같은 페이지에서 Paddle.js 오버레이 체크아웃(로그인 이메일을 `customer.email`로 고정하고 `customData.email`로도 넘김) → 웹훅이 그 이메일로 라이선스 행을 만든다 → `/thanks` → 앱의 설정 → License → "Sign in with ddugit.com". `/checkout?_ptxn=txn_…`(Paddle 결제 링크)는 로그인 없이 그 거래를 연다.
 
-계정 페이지(`/account`): 라이선스마다 **오프라인 활성화 코드**(IntelliJ 방식: `license-offline` 함수가 로그인 세션으로 확인하고 기기에 묶지 않은 평생 라이선스를 서명해 준다. 인터넷 없는 컴퓨터의 앱 설정 → 라이선스 → 붙여 넣기에 넣는다. 온라인이 되면 환불·취소된 라이선스는 내려놓는다)와 **환불 요청**(결제 14일 안, `license-refund` 함수가 로그인 세션으로 확인하고 `refund_requested_at`을 먼저 찍은 뒤 Paddle에 전액 환불 adjustment를 만든다. Paddle이 승인하면 웹훅이 `refunded`로). 앱 활성화가 실패하면 앱이 `/activate/done?result=failed&reason=signature|other-device|server`로 보내고 페이지가 이유별로 안내한다(`signature` = 앱의 공개키와 서버 서명 키가 짝이 아님)
+계정 페이지(`/account`): 라이선스마다 **오프라인 활성화 코드**(IntelliJ 방식: `license-offline` 함수가 로그인 세션으로 확인하고 기기에 묶지 않은 평생 라이선스를 서명해 준다. 인터넷 없는 컴퓨터의 앱 설정 → 라이선스 → 붙여 넣기에 넣는다. 온라인이 되면 환불·취소된 라이선스는 내려놓는다. 환불 기간 안의 첫 코드는 "환불 불가" 동의(`noRefund`)를 받고 `offline_issued_at`을 찍는다: 인터넷에 안 붙는 컴퓨터에는 환불이 닿지 않으므로 첫 코드가 환불을 끝낸다)와 **환불 요청**(결제 14일 안, 오프라인 코드를 만든 적이 없을 때(`refundable`의 `offline`), `license-refund` 함수가 로그인 세션으로 확인하고 `refund_requested_at`을 먼저 찍은 뒤 Paddle에 전액 환불 adjustment를 만든다. Paddle이 승인하면 웹훅이 `refunded`로). 앱 활성화가 실패하면 앱이 `/activate/done?result=failed&reason=signature|other-device|server`로 보내고 페이지가 이유별로 안내한다(`signature` = 앱의 공개키와 서버 서명 키가 짝이 아님)
 
 ## 문제 신고·문의 (Supabase)
 
