@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { DOCS, docPath } from "@/lib/docs";
 import { PAGES, pageMeta } from "@/lib/seo";
+import { SECTIONS } from "@/site";
 
 export const metadata: Metadata = pageMeta("/docs");
 
@@ -9,7 +10,7 @@ export default function Docs() {
   return (
     <div className="page">
       <header className="page-head center">
-        <p className="eyebrow">User guide</p>
+        <p className="eyebrow">{SECTIONS.docs.label}</p>
         <h1>How ddugit works</h1>
         <p className="lead">
           Every part of the app, chapter by chapter: where to find it, what it does, and the Git behind it. For one task

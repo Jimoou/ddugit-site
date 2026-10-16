@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { RELEASES, releaseId } from "@/lib/releases";
 import { PAGES, pageMeta } from "@/lib/seo";
+import { SECTIONS } from "@/site";
 
 export const metadata: Metadata = pageMeta("/releases");
 
@@ -19,7 +20,7 @@ export default function Releases() {
   return (
     <div className="page prose releases">
       <header className="page-head">
-        <p className="eyebrow">Release notes</p>
+        <p className="eyebrow">{SECTIONS.releases.label}</p>
         <h1>What&apos;s new in ddugit</h1>
         <p className="lead">
           Every release since 1.0, newest first. The app updates itself (Microsoft Store installs update through the

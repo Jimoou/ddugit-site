@@ -54,3 +54,17 @@ export const usd = (n: number) => `$${n.toLocaleString("en-US")}`;
 
 /** Login buttons on the account page, in order (each must be enabled in Supabase → Authentication → Providers). */
 export const LOGIN_PROVIDERS = ["github", "google"] as const satisfies readonly ("github" | "google")[];
+
+/**
+ * The site's sections, named once: the header, the footer, breadcrumbs and page labels all read these, so a
+ * section is called the same everywhere.
+ */
+export const SECTIONS = {
+  features: { href: "/#features", label: "Features" },
+  docs: { href: "/docs", label: "Docs" },
+  guides: { href: "/guides", label: "Guides" },
+  releases: { href: "/releases", label: "Releases" },
+  pricing: { href: "/pricing", label: "Pricing" },
+  download: { href: "/download", label: "Download" },
+  account: { href: "/account", label: "Account" },
+} as const;

@@ -13,6 +13,16 @@ export type Release = {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: "1.4.8",
+    date: "2026-10-16",
+    changes: [
+      {
+        kind: "new",
+        text: "Drag a repository tab sideways to change the order of your tabs. The order is remembered with your open tabs.",
+      },
+    ],
+  },
+  {
     version: "1.4.7",
     date: "2026-10-16",
     changes: [

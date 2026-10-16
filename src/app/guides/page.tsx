@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { GUIDES, guidePath } from "@/lib/guides";
 import { PAGES, pageMeta } from "@/lib/seo";
+import { SECTIONS } from "@/site";
 
 export const metadata: Metadata = pageMeta("/guides");
 
@@ -9,7 +10,7 @@ export default function Guides() {
   return (
     <div className="page">
       <header className="page-head center">
-        <p className="eyebrow">Guides</p>
+        <p className="eyebrow">{SECTIONS.guides.label}</p>
         <h1>Get things done in ddugit</h1>
         <p className="lead">
           Step-by-step guides to the Git tasks that trip people up, done on the graph. Each one ends with the git
