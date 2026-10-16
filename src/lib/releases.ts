@@ -13,6 +13,20 @@ export type Release = {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: "1.4.9",
+    date: "2026-10-16",
+    changes: [
+      {
+        kind: "improved",
+        text: "Zooming in past 100% makes the map's text larger too, a little slower than the map, so a closer look also reads larger.",
+      },
+      {
+        kind: "new",
+        text: "Map text size in Settings › Appearance: Small, Default or Large, at every zoom level.",
+      },
+    ],
+  },
+  {
     version: "1.4.8",
     date: "2026-10-16",
     changes: [

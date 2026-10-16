@@ -162,6 +162,10 @@ export default function SettingsAndShortcuts() {
           <strong>Space</strong>. See <Link href="/docs/branch-map#look">map styles and themes</Link>.
         </li>
         <li>
+          <strong>Map text size</strong>: <strong>Small</strong>, <strong>Default</strong> (the default) or{" "}
+          <strong>Large</strong>. Zooming in past 100% enlarges map text further.
+        </li>
+        <li>
           <strong>Effects</strong>: <strong>Sparkle effects</strong>, <strong>Map backdrop (star chart / space)</strong>{" "}
           and <strong>Glow (space, dark theme)</strong>. Glow can only be changed with the Space style.
         </li>
