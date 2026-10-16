@@ -108,7 +108,12 @@ export default function BranchMap() {
       </ul>
 
       <h3 id="zoom-levels">What changes as you zoom</h3>
-      <p>The map shows less text the further out you go, so you can still read its shape:</p>
+      <p>
+        Zoomed out, text keeps its size and the map shows less of it, so you can still read its shape. Zoomed in past
+        100%, the text grows with the map, a little slower than the map itself (about 1.4× at 200% and 1.6× at 300%), so
+        a closer look also reads larger. To make map text bigger or smaller at every zoom, see{" "}
+        <a href="#look">map text size</a>.
+      </p>
       <ul>
         <li>
           <strong>60% and closer:</strong> full captions with their chips.
@@ -171,6 +176,11 @@ export default function BranchMap() {
           dark theme.
         </li>
       </ul>
+      <p>
+        <strong>Map text size</strong> is <strong>Small</strong>, <strong>Default</strong> or <strong>Large</strong>. It
+        sets the size of branch names, tags and commit messages on the map at every zoom level. Larger text needs more
+        room, so a few more captions give way when neighbours are close.
+      </p>
       <p>
         <strong>Theme</strong> is <strong>System</strong>, <strong>Dark</strong> (the default) or <strong>Light</strong>
         . System follows your operating system and switches when it does. Every map style has colours for both themes;
