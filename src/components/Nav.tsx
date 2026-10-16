@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const LINKS = [
   { href: "/#features", label: "Features", wide: true },
+  { href: "/docs", label: "Docs", wide: true },
   { href: "/guides", label: "Guides", wide: true },
   { href: "/pricing", label: "Pricing" },
   { href: "/account", label: "Account" },
@@ -13,7 +14,7 @@ const LINKS = [
 /** The header links and the download button; the current page's link carries aria-current. */
 export function Nav() {
   const path = usePathname();
-  // A guide marks Guides as the current section.
+  // An article marks its section (Docs, Guides) as current.
   const current = (href: string) => (path === href || path.startsWith(`${href}/`) ? "page" : undefined);
   return (
     <nav className="nav" aria-label="Main">

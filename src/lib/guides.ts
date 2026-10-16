@@ -1,7 +1,9 @@
 // How-to guides: everyday Git tasks done in ddugit, step by step, with the git commands behind them.
 // One table feeds the guides index, each guide's metadata and structured data, and the sitemap.
+// The manual (`docs.ts`) is a second table of the same articles.
 
-export type Guide = {
+/** An article on the site: a guide or a chapter of the manual. */
+export type Article = {
   slug: string;
   /** Search result title: at most 60 characters, without the "· ddugit" suffix. */
   title: string;
@@ -52,16 +54,17 @@ export const GUIDES = [
     published: "2026-10-07",
     updated: "2026-10-07",
   },
-] as const satisfies readonly Guide[];
+] as const satisfies readonly Article[];
 
 export type GuideSlug = (typeof GUIDES)[number]["slug"];
 
 export const guidePath = (slug: GuideSlug) => `/guides/${slug}` as const;
 
-export const guideBySlug = (slug: GuideSlug): Guide => GUIDES.find((g) => g.slug === slug)!;
+export const guideBySlug = (slug: GuideSlug): Article => GUIDES.find((g) => g.slug === slug)!;
 
-/** The newest guide change: the index page's lastmod. */
-export const guidesUpdated = () =>
-  GUIDES.map((g) => g.updated as string)
+/** The newest change in a table of articles: its index page's lastmod. */
+export const newest = (list: readonly Article[]) =>
+  list
+    .map((a) => a.updated)
     .sort()
     .at(-1)!;
