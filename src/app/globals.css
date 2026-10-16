@@ -202,8 +202,13 @@ kbd {
 .nav .button {
   margin-left: 8px;
 }
+@media (max-width: 760px) {
+  .nav .hide-md {
+    display: none;
+  }
+}
 @media (max-width: 520px) {
-  .nav .wide {
+  .nav .hide-sm {
     display: none;
   }
   .nav a:not(.button) {

@@ -53,7 +53,7 @@ test("every guide and chapter has a search-sized title and description, a unique
   }
 });
 
-test("a chapter's breadcrumb points at the user guide", () => {
+test("a chapter's breadcrumb points at the docs", () => {
   const [article, crumbs] = docData("branch-map") as { url?: string; itemListElement?: { item: string }[] }[];
   assert.equal(article.url, "https://ddugit.com/docs/branch-map");
   assert.equal(crumbs.itemListElement?.[0].item, "https://ddugit.com/docs");

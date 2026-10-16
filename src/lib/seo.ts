@@ -2,7 +2,7 @@
 // the paths they must not index, and the structured data for the product.
 
 import type { Metadata } from "next";
-import { DEVICES, PRO_PRICE, SITE } from "../site.ts";
+import { DEVICES, PRO_PRICE, SECTIONS, SITE } from "../site.ts";
 import { type DocSlug, docBySlug, docPath } from "./docs.ts";
 import { type Article, type GuideSlug, guideBySlug, guidePath } from "./guides.ts";
 
@@ -34,9 +34,9 @@ export const PAGES = {
     priority: 0.7,
   },
   "/docs": {
-    title: "ddugit user guide: every feature, chapter by chapter",
+    title: "ddugit docs: every feature, chapter by chapter",
     description:
-      "The ddugit manual: getting started, the branch map, commits and staging, branches and remotes, history tools, many repositories, Pro features, settings and shortcuts.",
+      "The ddugit docs: getting started, the branch map, commits and staging, branches and remotes, history tools, many repositories, Pro features, settings and shortcuts.",
     priority: 0.7,
   },
   "/releases": {
@@ -143,14 +143,14 @@ export function productData(): Record<string, unknown> {
 
 /** A guide as schema.org data: the article and its place under Guides (for the breadcrumb in results). */
 export const guideData = (slug: GuideSlug) =>
-  articleData({ name: "Guides", path: "/guides", about: "Git" }, guidePath(slug), guideBySlug(slug));
+  articleData({ ...SECTIONS.guides, about: "Git" }, guidePath(slug), guideBySlug(slug));
 
 /** A manual chapter as schema.org data, as `guideData`. */
 export const docData = (slug: DocSlug) =>
-  articleData({ name: "User guide", path: "/docs", about: SITE.name }, docPath(slug), docBySlug(slug));
+  articleData({ ...SECTIONS.docs, about: SITE.name }, docPath(slug), docBySlug(slug));
 
 function articleData(
-  section: { name: string; path: string; about: string },
+  section: { label: string; href: string; about: string },
   path: string,
   { title, description, published, updated }: Article,
 ): Record<string, unknown>[] {
@@ -174,7 +174,7 @@ function articleData(
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: section.name, item: `${SITE.url}${section.path}` },
+        { "@type": "ListItem", position: 1, name: section.label, item: `${SITE.url}${section.href}` },
         { "@type": "ListItem", position: 2, name: title, item: url },
       ],
     },

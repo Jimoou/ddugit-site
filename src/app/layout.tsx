@@ -5,7 +5,7 @@ import { NavProgress } from "@/components/Pending";
 import { Nav } from "@/components/Nav";
 import { Wordmark } from "@/components/Wordmark";
 import { OPEN_GRAPH, PAGES, TWITTER } from "@/lib/seo";
-import { SITE } from "@/site";
+import { SECTIONS, SITE } from "@/site";
 import "./globals.css";
 
 // Defaults for every page; public pages add their own title, description and canonical URL (`pageMeta`).
@@ -17,6 +17,12 @@ export const metadata: Metadata = {
   openGraph: OPEN_GRAPH,
   twitter: TWITTER,
 };
+
+/** Footer columns of site sections; the header lists the same sections by the same names. */
+const FOOTER = [
+  { title: "Product", links: [SECTIONS.features, SECTIONS.download, SECTIONS.pricing, SECTIONS.account] },
+  { title: "Learn", links: [SECTIONS.docs, SECTIONS.guides, SECTIONS.releases] },
+];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -45,16 +51,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <p>A Git client built around the commit graph. For macOS and Windows.</p>
             </div>
             <nav className="bottom-links" aria-label="Footer">
-              <div>
-                <h2>Product</h2>
-                <Link href="/#features">Features</Link>
-                <Link href="/download">Download</Link>
-                <Link href="/pricing">Pricing</Link>
-                <Link href="/docs">User guide</Link>
-                <Link href="/guides">Guides</Link>
-                <Link href="/releases">Release notes</Link>
-                <Link href="/account">Account</Link>
-              </div>
+              {FOOTER.map((group) => (
+                <div key={group.title}>
+                  <h2>{group.title}</h2>
+                  {group.links.map((l) => (
+                    <Link key={l.href} href={l.href}>
+                      {l.label}
+                    </Link>
+                  ))}
+                </div>
+              ))}
               <div>
                 <h2>Legal</h2>
                 <Link href="/terms">Terms</Link>

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { DOCS, type DocSlug, docBySlug, docPath } from "@/lib/docs";
 import { type Article, GUIDES, type GuideSlug, guideBySlug, guidePath } from "@/lib/guides";
 import { docData, guideData, jsonLd } from "@/lib/seo";
+import { SECTIONS } from "@/site";
 
 const dateText = (iso: string) =>
   new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", {
@@ -18,7 +19,7 @@ export function GuideArticle({ slug, lead, children }: { slug: GuideSlug; lead: 
     <ArticleFrame
       article={guideBySlug(slug)}
       data={guideData(slug)}
-      up={{ href: "/guides", label: "Guides" }}
+      up={SECTIONS.guides}
       lead={lead}
       after={
         <aside className="guide-more" aria-label="More guides">
@@ -38,7 +39,7 @@ export function GuideArticle({ slug, lead, children }: { slug: GuideSlug; lead: 
   );
 }
 
-/** A chapter of the user guide: as a guide page, ending with the previous and next chapters and the contents. */
+/** A chapter of the docs: as a guide page, ending with the previous and next chapters and the contents. */
 export function DocArticle({ slug, lead, children }: { slug: DocSlug; lead: string; children: ReactNode }) {
   const i = DOCS.findIndex((d) => d.slug === slug);
   const [prev, next] = [DOCS[i - 1], DOCS[i + 1]];
@@ -46,7 +47,7 @@ export function DocArticle({ slug, lead, children }: { slug: DocSlug; lead: stri
     <ArticleFrame
       article={docBySlug(slug)}
       data={docData(slug)}
-      up={{ href: "/docs", label: "User guide" }}
+      up={SECTIONS.docs}
       lead={lead}
       after={
         <>
@@ -64,8 +65,8 @@ export function DocArticle({ slug, lead, children }: { slug: DocSlug; lead: stri
               </Link>
             )}
           </nav>
-          <aside className="guide-more" aria-label="User guide contents">
-            <h2>User guide</h2>
+          <aside className="guide-more" aria-label="Docs contents">
+            <h2>All chapters</h2>
             <ol>
               {DOCS.map((d) => (
                 <li key={d.slug}>
