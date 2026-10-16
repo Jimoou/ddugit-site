@@ -51,7 +51,7 @@ const FAQ = [
   },
   {
     q: "How do I move Pro to a new computer?",
-    a: "Remove a computer you no longer use, either in its app (Settings → License → Remove this device) or on your account page on ddugit.com. Then activate Pro on the new one.",
+    a: "Remove a computer you no longer use, either in its app (Settings → License → Deactivate this device) or on your account page on ddugit.com. Then activate Pro on the new one.",
   },
   {
     q: "Do I need an account?",

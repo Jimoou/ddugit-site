@@ -1888,8 +1888,99 @@ dialog.confirm .license-text {
   padding-top: 8px;
   border-top: 1px solid var(--line);
 }
-.guide-more ul {
+.guide-more ul,
+.guide-more ol {
   padding-left: 18px;
+}
+.guide-more [aria-current] {
+  color: var(--muted);
+}
+
+/* User guide: numbered chapters, and the previous / next chapter after each one. */
+.doc-number {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.doc-turn {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 56px;
+}
+.doc-turn a {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+}
+.doc-turn a:hover,
+.doc-turn a:focus-visible {
+  background: var(--surface-2);
+}
+.doc-turn .next {
+  grid-column: 2;
+  text-align: right;
+}
+.doc-turn .muted {
+  font-size: 13px;
+}
+@media (max-width: 720px) {
+  .doc-turn {
+    grid-template-columns: 1fr;
+  }
+  .doc-turn .next {
+    grid-column: 1;
+  }
+}
+
+/* Release notes */
+.release-list {
+  padding: 0;
+  list-style: none;
+}
+.release {
+  padding: 8px 0 20px;
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 80px;
+}
+.release h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.release h2 a {
+  color: var(--text);
+  text-decoration: none;
+}
+.release h2 time {
+  font-size: 14px;
+  font-weight: 400;
+}
+.release ul {
+  padding-left: 0;
+  list-style: none;
+}
+.release li {
+  margin-bottom: 8px;
+}
+.change-kind {
+  display: inline-block;
+  min-width: 72px;
+  margin-right: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.change-kind.new {
+  color: var(--text);
 }
 .guide-cta {
   margin-top: 40px;

@@ -1,7 +1,9 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
+import { DOCS } from "./docs.ts";
 import { GUIDES } from "./guides.ts";
-import { BLOCKED_PATHS, guideData, guideMeta, jsonLd, PAGES, pageMeta, productData } from "./seo.ts";
+import { RELEASES, releaseId } from "./releases.ts";
+import { BLOCKED_PATHS, docData, guideData, guideMeta, jsonLd, PAGES, pageMeta, productData } from "./seo.ts";
 
 test("every public page has a search-sized title and description", () => {
   for (const [path, page] of Object.entries(PAGES)) {
@@ -33,17 +35,43 @@ test("structured data offers Free and the lifetime Pro price and can't close its
   assert.ok(!jsonLd({ s: "</script><script>" }).__html.includes("</script>"));
 });
 
-test("every guide has a search-sized title and description, a unique slug and a page", async () => {
+test("every guide and chapter has a search-sized title and description, a unique slug and a page", async () => {
   const { existsSync } = await import("node:fs");
-  const slugs = new Set<string>();
-  for (const g of GUIDES) {
-    assert.ok(g.title.length <= 60, `${g.slug} title is ${g.title.length} chars`);
-    assert.ok(g.description.length <= 200, `${g.slug} description is ${g.description.length} chars`);
-    assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(g.updated) && g.published <= g.updated, g.slug);
-    assert.ok(!slugs.has(g.slug), `duplicate ${g.slug}`);
-    slugs.add(g.slug);
-    assert.ok(existsSync(new URL(`../app/guides/${g.slug}/page.tsx`, import.meta.url)), `no page for ${g.slug}`);
+  for (const [dir, list] of [
+    ["guides", GUIDES],
+    ["docs", DOCS],
+  ] as const) {
+    const slugs = new Set<string>();
+    for (const a of list) {
+      assert.ok(a.title.length <= 60, `${a.slug} title is ${a.title.length} chars`);
+      assert.ok(a.description.length <= 200, `${a.slug} description is ${a.description.length} chars`);
+      assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(a.updated) && a.published <= a.updated, a.slug);
+      assert.ok(!slugs.has(a.slug), `duplicate ${a.slug}`);
+      slugs.add(a.slug);
+      assert.ok(existsSync(new URL(`../app/${dir}/${a.slug}/page.tsx`, import.meta.url)), `no page for ${a.slug}`);
+    }
   }
+});
+
+test("a chapter's breadcrumb points at the user guide", () => {
+  const [article, crumbs] = docData("branch-map") as { url?: string; itemListElement?: { item: string }[] }[];
+  assert.equal(article.url, "https://ddugit.com/docs/branch-map");
+  assert.equal(crumbs.itemListElement?.[0].item, "https://ddugit.com/docs");
+});
+
+test("releases run newest first with one entry per version", () => {
+  const key = (v: string) => v.split(".").map(Number);
+  for (const [newer, older] of RELEASES.slice(0, -1).map((r, i) => [r, RELEASES[i + 1]] as const)) {
+    const [a, b] = [key(newer.version), key(older.version)];
+    const cmp = a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+    assert.ok(cmp > 0, `${newer.version} should come before ${older.version}`);
+    assert.ok(newer.date >= older.date, `${newer.version} is dated before ${older.version}`);
+  }
+  for (const r of RELEASES) {
+    assert.ok(/^\d+\.\d+\.\d+$/.test(r.version) && /^\d{4}-\d{2}-\d{2}$/.test(r.date), r.version);
+    assert.ok(r.changes.length > 0, `${r.version} lists no changes`);
+  }
+  assert.equal(releaseId("1.4.7"), "v1-4-7");
 });
 
 test("a guide's metadata and structured data point at the guide", () => {
