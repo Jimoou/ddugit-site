@@ -13,6 +13,16 @@ export type Release = {
 
 export const RELEASES: readonly Release[] = [
   {
+    version: "1.4.10",
+    date: "2026-10-20",
+    changes: [
+      {
+        kind: "fixed",
+        text: "In the Microsoft Store version, the app icon fills its space on the taskbar and Start menu instead of sitting small on a coloured plate.",
+      },
+    ],
+  },
+  {
     version: "1.4.9",
     date: "2026-10-16",
     changes: [
