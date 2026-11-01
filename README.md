@@ -30,6 +30,7 @@ npm run build
 | Netlify          | `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`, `NEXT_PUBLIC_PADDLE_PRICE_ID`, `NEXT_PUBLIC_PADDLE_ENV` | 판매 시 | 공개 값. 셋이 맞아야(`test_` 토큰은 `sandbox`, `live_`는 그 외, 가격은 `pri_…`) 구매 버튼이 열린다                                                    |
 | Netlify          | `REPORT_FORWARD_SECRET`                                                                    | 예      | Supabase와 같은 값. 없으면 `/api/report` 503                                                                                                          |
 | Netlify          | `ALLOW_TEST_LICENSES`                                                                      | 아니오  | `true`면 `/activate`가 테스트 주문 라이선스도 고른다. 테스트 구매할 때만                                                                              |
+| GitHub Variables | `SUPABASE_ANON_KEY`                                                                        | 예      | Netlify의 `NEXT_PUBLIC_SUPABASE_ANON_KEY`와 같은 공개 값. `keepalive.yml`이 주 2회 DB를 불러 Free 프로젝트의 7일 자동 정지를 막는다                   |
 | Supabase Secrets | `DDUGIT_LICENSE_PRIVATE_KEY`, `DDUGIT_LICENSE_PUBKEY`                                      | 예      | 라이선스 서명·확인                                                                                                                                    |
 | Supabase Secrets | `PADDLE_WEBHOOK_SECRET`, `PADDLE_PRODUCT_ID`                                               | 예      | 상품 id(`pro_…`) 없으면 웹훅이 라이선스를 만들지 않는다(500)                                                                                          |
 | Supabase Secrets | `PADDLE_API_KEY`, `PADDLE_ENV`                                                             | 예      | API 키 권한: Customers 읽기(이메일 없는 결제의 구매자 조회), Adjustments 쓰기(계정 페이지 환불 요청). `PADDLE_ENV=sandbox`면 sandbox API·`store_test` |
@@ -54,6 +55,7 @@ npm run build
 - `supabase/functions/paddle-webhook`: Paddle Billing 웹훅. `transaction.completed` → 평생 라이선스 행(`store_order_id` = 거래 id `txn_…`, 기기 3대 × 수량), 승인된 전액 환불·차지백(`adjustment.created`/`updated`, `action` refund/chargeback, `status` approved, `type`이 partial이 아님) → `store_refunds`에 기록하고 `status = 'refunded'`(앱은 다음 확인 때 Pro를 끈다). 환불이 거래보다 먼저 와도 거래를 넣은 뒤 `store_refunds`를 보고 바로 환불 처리한다. 부분 환불·다른 이벤트·다른 상품은 200으로 무시. 서명은 `Paddle-Signature`(`ts:본문`의 HMAC-SHA256, 5분 넘은 것은 거부). 라이선스는 `custom_data.email`(체크아웃 때 넘긴 로그인 이메일)로, 없으면 Paddle API로 고객 이메일을 조회한다. `PADDLE_PRODUCT_ID`가 없으면 아무 라이선스도 만들지 않고 500. 순수 로직은 `_shared/store.ts`
 - `supabase/functions/_shared/license.ts`: 라이선스 형식(앱의 `license.rs`와 같음)과 사용 가능 규칙. 함수 공통은 `_shared/http.ts`(`json`, `env`, `handle`: POST만, 빠진 설정은 500 "not configured")와 `_shared/db.ts`(`serviceDb`, 서명 키). Next도 `_shared`의 순수 모듈(`license.ts`, `report.ts`, `email.ts`)을 직접 가져온다(`tsconfig`의 `allowImportingTsExtensions`). `npm test`
 - 배포: `main`에 `supabase/`가 바뀌면 `.github/workflows/supabase.yml`이 마이그레이션과 함수를 올린다
+- 자동 정지 막기: Free 프로젝트는 7일 동안 활동이 없으면 멈춘다(다운로드·업데이트·활성화·웹훅이 함께 멈춤). `.github/workflows/keepalive.yml`이 월·목에 공개 키로 `public.keepalive()`를 부른다. 실패하면 GitHub이 메일을 보낸다. 공개 저장소면 GitHub이 60일 동안 커밋이 없는 저장소의 예약 작업을 끄므로, 그때 받는 메일을 보면 Actions에서 다시 켠다. Supabase Pro로 올리면 이 작업은 지워도 된다
 
 한 번 설정:
 
