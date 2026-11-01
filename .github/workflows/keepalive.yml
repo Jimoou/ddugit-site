@@ -1,0 +1,35 @@
+name: Keepalive
+
+# Supabase pauses a Free project after 7 days without activity (downloads, updates, Pro activation
+# and the store webhook would all stop). Twice a week, call the database through the API with the
+# public anon key (public.keepalive(), supabase/migrations/20261101000000_keepalive.sql), so the gap
+# never reaches 7 days. Needs SUPABASE_PROJECT_REF and SUPABASE_ANON_KEY (variables; the anon key is
+# the public one Netlify has as NEXT_PUBLIC_SUPABASE_ANON_KEY). A failed run means the project may
+# pause: GitHub emails the failure.
+on:
+  schedule:
+    - cron: "17 3 * * 1,4"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}
+      ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+    steps:
+      - name: Call public.keepalive()
+        run: |
+          if [ -z "$PROJECT_REF" ] || [ -z "$ANON_KEY" ]; then
+            echo "::error::Set SUPABASE_PROJECT_REF and SUPABASE_ANON_KEY (Settings → Secrets and variables → Actions → Variables)"
+            exit 1
+          fi
+          answer=$(curl -sS --fail-with-body --retry 3 --retry-all-errors --max-time 30 \
+            -X POST "https://$PROJECT_REF.supabase.co/rest/v1/rpc/keepalive" \
+            -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" \
+            -H "Content-Type: application/json" -d '{}')
+          echo "keepalive: $answer"
+          [ "$answer" = "1" ] || { echo "::error::Unexpected answer from keepalive()"; exit 1; }
