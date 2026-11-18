@@ -1,0 +1,42 @@
+name: Keepalive
+
+# Supabase pauses a Free project after 7 days without activity (downloads, updates, Pro activation
+# and the store webhook would all stop). Twice a week, call the database through the API with the
+# public anon key (public.keepalive(), supabase/migrations/20261101000000_keepalive.sql), so the gap
+# never reaches 7 days. Needs SUPABASE_PROJECT_REF, and the anon key: the variable SUPABASE_ANON_KEY
+# (the public value Netlify has as NEXT_PUBLIC_SUPABASE_ANON_KEY), or else it is read with the deploy's
+# SUPABASE_ACCESS_TOKEN. A failed run means the project may pause: GitHub emails the failure.
+on:
+  schedule:
+    - cron: "17 3 * * 1,4"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}
+      ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - name: Call public.keepalive()
+        run: |
+          if [ -z "$ANON_KEY" ] && [ -n "$SUPABASE_ACCESS_TOKEN" ] && [ -n "$PROJECT_REF" ]; then
+            # Only the anon key is kept from the answer; it is public, but keep it out of the log anyway.
+            ANON_KEY=$(curl -sS --fail --max-time 30 -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              "https://api.supabase.com/v1/projects/$PROJECT_REF/api-keys" | jq -r '.[] | select(.name == "anon") | .api_key')
+            [ -n "$ANON_KEY" ] && echo "::add-mask::$ANON_KEY"
+          fi
+          if [ -z "$PROJECT_REF" ] || [ -z "$ANON_KEY" ]; then
+            echo "::error::Set SUPABASE_PROJECT_REF, and SUPABASE_ANON_KEY or SUPABASE_ACCESS_TOKEN (Settings → Secrets and variables → Actions)"
+            exit 1
+          fi
+          answer=$(curl -sS --fail-with-body --retry 3 --retry-all-errors --max-time 30 \
+            -X POST "https://$PROJECT_REF.supabase.co/rest/v1/rpc/keepalive" \
+            -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" \
+            -H "Content-Type: application/json" -d '{}')
+          echo "keepalive: $answer"
+          [ "$answer" = "1" ] || { echo "::error::Unexpected answer from keepalive()"; exit 1; }
